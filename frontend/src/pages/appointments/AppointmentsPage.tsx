@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, Plus } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -104,7 +105,13 @@ export function AppointmentsPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border overflow-hidden">
+      <motion.div
+        key={debouncedSearch + statusFilter + page}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' as const }}
+        className="rounded-xl border border-border overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -173,7 +180,7 @@ export function AppointmentsPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </motion.div>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground flex-wrap gap-2">

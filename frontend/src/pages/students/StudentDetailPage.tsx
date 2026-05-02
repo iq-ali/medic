@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { studentsService } from '@/services/students.service'
 import { useAuth } from '@/hooks/useAuth'
 import { DISABILITY_LABELS, GENDER_LABELS } from '@/types/student'
 import { STATUS_LABELS, STATUS_CLASSES } from '@/types/appointment'
+import { sectionContainerVariants, sectionVariants } from '@/lib/animations'
 import type { StudentWithRelations } from '@/types/student'
 import type { AppointmentStatus } from '@/types/appointment'
 
@@ -75,7 +77,12 @@ export function StudentDetailPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <motion.div
+      variants={sectionContainerVariants}
+      initial="initial"
+      animate="animate"
+      className="space-y-6 max-w-3xl"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/students')}>
@@ -96,7 +103,7 @@ export function StudentDetailPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border px-4 sm:px-5">
+      <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5">
         <h3 className="text-sm font-semibold pt-4 pb-2">Personal Information</h3>
         <dl>
           <InfoRow label="Full Name" value={`${student.firstName} ${student.lastName}`} />
@@ -111,9 +118,9 @@ export function StudentDetailPage() {
           <InfoRow label="Severity" value={student.disabilitySeverity} />
           <InfoRow label="Diagnosis Date" value={formatDate(student.diagnosisDate)} />
         </dl>
-      </div>
+      </motion.div>
 
-      <div className="rounded-xl border border-border px-4 sm:px-5">
+      <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5">
         <div className="flex items-center justify-between pt-4 pb-2 gap-2 flex-wrap">
           <h3 className="text-sm font-semibold">
             Medical Records{' '}
@@ -150,9 +157,9 @@ export function StudentDetailPage() {
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <div className="rounded-xl border border-border px-4 sm:px-5">
+      <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5">
         <div className="flex items-center justify-between pt-4 pb-2 gap-2 flex-wrap">
           <h3 className="text-sm font-semibold">
             Appointments{' '}
@@ -199,9 +206,9 @@ export function StudentDetailPage() {
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <div className="rounded-xl border border-border px-4 sm:px-5">
+      <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5">
         <h3 className="text-sm font-semibold pt-4 pb-2">
           Guardians{' '}
           <span className="font-normal text-muted-foreground">({student.guardians.length})</span>
@@ -226,7 +233,7 @@ export function StudentDetailPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

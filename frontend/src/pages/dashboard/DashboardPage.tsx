@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Users, CalendarDays, UserCog, FileText } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { api } from '@/services/api'
 import { useAuth } from '@/hooks/useAuth'
+import { containerVariants, itemVariants, cardHover } from '@/lib/animations'
 
 interface Stats {
   students: number
@@ -13,13 +15,17 @@ interface Stats {
 
 function StatCard({ label, value, icon: Icon }: { label: string; value: number | string; icon: LucideIcon }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+    <motion.div
+      variants={itemVariants}
+      {...cardHover}
+      className="rounded-xl border border-border bg-card p-5 space-y-3"
+    >
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted-foreground">{label}</span>
         <Icon className="size-4 text-muted-foreground" />
       </div>
       <p className="text-2xl font-bold tracking-tight">{value}</p>
-    </div>
+    </motion.div>
   )
 }
 
@@ -53,7 +59,12 @@ export function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <motion.div
+        variants={containerVariants}
+        initial="initial"
+        animate="animate"
+        className="grid grid-cols-2 gap-4 lg:grid-cols-4"
+      >
         <StatCard label="Students" value={display(stats?.students)} icon={Users} />
         <StatCard
           label="Appointments Today"
@@ -66,7 +77,7 @@ export function DashboardPage() {
           value={display(stats?.medicalRecords)}
           icon={FileText}
         />
-      </div>
+      </motion.div>
     </div>
   )
 }

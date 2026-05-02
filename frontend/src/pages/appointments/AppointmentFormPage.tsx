@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { appointmentsService } from '@/services/appointments.service'
 import { studentsService } from '@/services/students.service'
 import { staffService } from '@/services/staff.service'
+import { fadeUpVariants } from '@/lib/animations'
 import type { Student } from '@/types/student'
 import type { Staff } from '@/types/staff'
 
@@ -141,7 +143,7 @@ export function AppointmentFormPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <motion.div variants={fadeUpVariants} initial="initial" animate="animate" className="max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft />
@@ -244,6 +246,6 @@ export function AppointmentFormPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </motion.div>
   )
 }

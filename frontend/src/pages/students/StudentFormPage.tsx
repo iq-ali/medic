@@ -4,10 +4,12 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { studentsService } from '@/services/students.service'
+import { fadeUpVariants } from '@/lib/animations'
 
 const schema = z.object({
   firstName: z.string().min(1, 'First name required'),
@@ -104,7 +106,7 @@ export function StudentFormPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <motion.div variants={fadeUpVariants} initial="initial" animate="animate" className="max-w-2xl space-y-6">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -214,6 +216,6 @@ export function StudentFormPage() {
           </Button>
         </div>
       </form>
-    </div>
+    </motion.div>
   )
 }

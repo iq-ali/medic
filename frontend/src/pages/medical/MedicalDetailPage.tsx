@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { medicalService } from '@/services/medical.service'
 import { useAuth } from '@/hooks/useAuth'
+import { sectionContainerVariants, sectionVariants } from '@/lib/animations'
 import type { MedicalRecord } from '@/types/medical'
 
 function formatDate(dateStr: string) {
@@ -64,7 +66,12 @@ export function MedicalDetailPage() {
   const canWrite = user?.role === 'ADMIN' || user?.role === 'DOCTOR'
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <motion.div
+      variants={sectionContainerVariants}
+      initial="initial"
+      animate="animate"
+      className="space-y-6 max-w-3xl"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
@@ -83,7 +90,7 @@ export function MedicalDetailPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border px-4 sm:px-5">
+      <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5">
         <h3 className="text-sm font-semibold pt-4 pb-2">Record Details</h3>
         <dl>
           <InfoRow label="Date" value={formatDate(record.recordDate)} />
@@ -111,21 +118,21 @@ export function MedicalDetailPage() {
             }
           />
         </dl>
-      </div>
+      </motion.div>
 
-      <div className="rounded-xl border border-border px-4 sm:px-5 pb-5">
+      <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5 pb-5">
         <h3 className="text-sm font-semibold pt-4 pb-3">Description</h3>
         <p className="text-sm whitespace-pre-line leading-relaxed">{record.description}</p>
-      </div>
+      </motion.div>
 
       {record.notes && (
-        <div className="rounded-xl border border-border px-4 sm:px-5 pb-5">
+        <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5 pb-5">
           <h3 className="text-sm font-semibold pt-4 pb-3">Notes</h3>
           <p className="text-sm whitespace-pre-line leading-relaxed text-muted-foreground">
             {record.notes}
           </p>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   )
 }

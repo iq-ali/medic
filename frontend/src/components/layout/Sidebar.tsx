@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   LayoutDashboard,
   Users,
@@ -57,19 +58,19 @@ interface SidebarProps {
   onClose: () => void
 }
 
+const springTransition = { type: 'spring', stiffness: 340, damping: 32 } as const
+
+const sidebarVariants = {
+  open: { x: 0, transition: springTransition },
+  closed: { x: '-100%', transition: springTransition },
+}
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth()
   const visible = navItems.filter((item) => user && item.roles.includes(user.role))
 
-  return (
-    <aside
-      className={cn(
-        'w-56 shrink-0 h-screen bg-sidebar border-r border-sidebar-border flex flex-col',
-        'fixed inset-y-0 left-0 z-30 transition-transform duration-200',
-        'md:relative md:translate-x-0',
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      )}
-    >
+  const inner = (
+    <>
       <div className="px-4 py-5 border-b border-sidebar-border flex items-center justify-between">
         <span className="text-base font-bold tracking-tight text-sidebar-foreground">
           Medic
@@ -89,18 +90,57 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             onClick={onClose}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                'relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                  ? 'text-sidebar-primary-foreground'
                   : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               )
             }
           >
-            <item.icon className="size-4 shrink-0" />
-            {item.label}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <motion.span
+                    layoutId="sidebar-active-bg"
+                    className="absolute inset-0 rounded-lg bg-sidebar-primary"
+                    transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+                  />
+                )}
+                <item.icon className="relative size-4 shrink-0" />
+                <span className="relative">{item.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* desktop: always visible, no animation needed */}
+      <aside className="w-56 shrink-0 h-screen bg-sidebar border-r border-sidebar-border flex-col hidden md:flex">
+        {inner}
+      </aside>
+
+      {/* mobile: spring-animated drawer */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.aside
+            key="mobile-sidebar"
+            className={cn(
+              'w-56 shrink-0 h-screen bg-sidebar border-r border-sidebar-border flex flex-col',
+              'fixed inset-y-0 left-0 z-30 md:hidden'
+            )}
+            variants={sidebarVariants}
+            initial="closed"
+            animate="open"
+            exit="closed"
+          >
+            {inner}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

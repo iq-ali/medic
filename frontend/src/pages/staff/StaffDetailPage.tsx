@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Pencil } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { staffService } from '@/services/staff.service'
 import { useAuth } from '@/hooks/useAuth'
 import { ROLE_LABELS } from '@/types/staff'
+import { sectionContainerVariants, sectionVariants } from '@/lib/animations'
 import type { Staff } from '@/types/staff'
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -55,7 +57,12 @@ export function StaffDetailPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <motion.div
+      variants={sectionContainerVariants}
+      initial="initial"
+      animate="animate"
+      className="space-y-6 max-w-2xl"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/staff')}>
@@ -78,7 +85,7 @@ export function StaffDetailPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border px-4 sm:px-5">
+      <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5">
         <h3 className="text-sm font-semibold pt-4 pb-2">Staff Information</h3>
         <dl>
           <InfoRow
@@ -97,7 +104,7 @@ export function StaffDetailPage() {
           <InfoRow label="Specialty" value={staff.specialty} />
           <InfoRow label="Phone" value={staff.phone} />
         </dl>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
