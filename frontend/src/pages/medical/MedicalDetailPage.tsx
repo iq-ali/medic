@@ -16,9 +16,9 @@ function formatDate(dateStr: string) {
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="py-3 grid grid-cols-3 gap-4 border-b border-border last:border-0">
+    <div className="py-3 grid grid-cols-1 gap-0.5 sm:grid-cols-3 sm:gap-4 border-b border-border last:border-0">
       <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="text-sm col-span-2">{value ?? '—'}</dd>
+      <dd className="text-sm sm:col-span-2">{value ?? '—'}</dd>
     </div>
   )
 }
@@ -65,25 +65,25 @@ export function MedicalDetailPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
             <ArrowLeft />
           </Button>
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">{record.title}</h2>
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold tracking-tight truncate">{record.title}</h2>
             <p className="text-xs text-muted-foreground">{formatDate(record.recordDate)}</p>
           </div>
         </div>
         {canWrite && (
-          <Button size="sm" onClick={() => navigate(`/medical/${id}/edit`)}>
+          <Button size="sm" className="shrink-0" onClick={() => navigate(`/medical/${id}/edit`)}>
             <Pencil />
             Edit
           </Button>
         )}
       </div>
 
-      <div className="rounded-xl border border-border px-5">
+      <div className="rounded-xl border border-border px-4 sm:px-5">
         <h3 className="text-sm font-semibold pt-4 pb-2">Record Details</h3>
         <dl>
           <InfoRow label="Date" value={formatDate(record.recordDate)} />
@@ -113,13 +113,13 @@ export function MedicalDetailPage() {
         </dl>
       </div>
 
-      <div className="rounded-xl border border-border px-5 pb-5">
+      <div className="rounded-xl border border-border px-4 sm:px-5 pb-5">
         <h3 className="text-sm font-semibold pt-4 pb-3">Description</h3>
         <p className="text-sm whitespace-pre-line leading-relaxed">{record.description}</p>
       </div>
 
       {record.notes && (
-        <div className="rounded-xl border border-border px-5 pb-5">
+        <div className="rounded-xl border border-border px-4 sm:px-5 pb-5">
           <h3 className="text-sm font-semibold pt-4 pb-3">Notes</h3>
           <p className="text-sm whitespace-pre-line leading-relaxed text-muted-foreground">
             {record.notes}

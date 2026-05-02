@@ -150,7 +150,7 @@ export function MedicalFormPage() {
           <FieldError message={errors.title?.message} />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Record Date">
             <Input type="date" aria-invalid={!!errors.recordDate} {...register('recordDate')} />
             <FieldError message={errors.recordDate?.message} />
@@ -160,7 +160,7 @@ export function MedicalFormPage() {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Student">
             <Select
               aria-invalid={!!errors.studentId}
@@ -200,16 +200,12 @@ export function MedicalFormPage() {
         </Field>
 
         <Field label="Notes (optional)">
-          <Textarea
-            placeholder="Additional notes…"
-            rows={3}
-            {...register('notes')}
-          />
+          <Textarea placeholder="Additional notes…" rows={3} {...register('notes')} />
         </Field>
 
         {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-1 flex-wrap">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Record'}
           </Button>

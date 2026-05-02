@@ -44,14 +44,14 @@ export function StudentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative w-72">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-0 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search by name or ID…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
+            className="pl-8 w-full"
           />
         </div>
         {user?.role === 'ADMIN' && (
@@ -63,83 +63,75 @@ export function StudentsPage() {
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50 border-b border-border">
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Student ID</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Grade</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Disability</th>
-              <th className="py-3 px-4" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="py-12 text-center text-muted-foreground">
-                  Loading…
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">Student ID</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground hidden sm:table-cell">Grade</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground hidden md:table-cell">Disability</th>
+                <th className="py-3 px-4" />
               </tr>
-            ) : students.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-12 text-center text-muted-foreground">
-                  No students found.
-                </td>
-              </tr>
-            ) : (
-              students.map((s) => (
-                <tr
-                  key={s.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-3 px-4 font-mono text-xs text-muted-foreground">
-                    {s.studentId}
-                  </td>
-                  <td className="py-3 px-4 font-medium">
-                    {s.firstName} {s.lastName}
-                  </td>
-                  <td className="py-3 px-4">{s.grade}</td>
-                  <td className="py-3 px-4">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                      {DISABILITY_LABELS[s.disabilityType]}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/students/${s.id}`)}
-                    >
-                      View
-                    </Button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                    Loading…
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : students.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                    No students found.
+                  </td>
+                </tr>
+              ) : (
+                students.map((s) => (
+                  <tr
+                    key={s.id}
+                    className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="py-3 px-4 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                      {s.studentId}
+                    </td>
+                    <td className="py-3 px-4 font-medium whitespace-nowrap">
+                      {s.firstName} {s.lastName}
+                    </td>
+                    <td className="py-3 px-4 hidden sm:table-cell">{s.grade}</td>
+                    <td className="py-3 px-4 hidden md:table-cell">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground whitespace-nowrap">
+                        {DISABILITY_LABELS[s.disabilityType]}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/students/${s.id}`)}
+                      >
+                        View
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-muted-foreground flex-wrap gap-2">
           <span>
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page === 1}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>
               Previous
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page === totalPages}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>
               Next
             </Button>
           </div>

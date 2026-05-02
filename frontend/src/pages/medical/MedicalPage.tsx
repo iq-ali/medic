@@ -55,14 +55,14 @@ export function MedicalPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative w-72">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-0 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search by title or hospital…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
+            className="pl-8 w-full"
           />
         </div>
         {canWrite && (
@@ -79,88 +79,80 @@ export function MedicalPage() {
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50 border-b border-border">
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Date</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Title</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Student</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Doctor</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Hospital</th>
-              <th className="py-3 px-4" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                  Loading…
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground whitespace-nowrap hidden sm:table-cell">Date</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Title</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground hidden md:table-cell">Student</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground hidden lg:table-cell">Doctor</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground hidden lg:table-cell">Hospital</th>
+                <th className="py-3 px-4" />
               </tr>
-            ) : records.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                  No medical records found.
-                </td>
-              </tr>
-            ) : (
-              records.map((r) => (
-                <tr
-                  key={r.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
-                    {formatDate(r.recordDate)}
-                  </td>
-                  <td className="py-3 px-4 font-medium">{r.title}</td>
-                  <td className="py-3 px-4">
-                    <button
-                      className="hover:underline text-left"
-                      onClick={() => navigate(`/students/${r.student.id}`)}
-                    >
-                      {r.student.firstName} {r.student.lastName}
-                    </button>
-                  </td>
-                  <td className="py-3 px-4 text-muted-foreground">
-                    {r.doctor ? `${r.doctor.firstName} ${r.doctor.lastName}` : '—'}
-                  </td>
-                  <td className="py-3 px-4 text-muted-foreground">{r.hospital ?? '—'}</td>
-                  <td className="py-3 px-4 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/medical/${r.id}`)}
-                    >
-                      View
-                    </Button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                    Loading…
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : records.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                    No medical records found.
+                  </td>
+                </tr>
+              ) : (
+                records.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="py-3 px-4 text-muted-foreground whitespace-nowrap hidden sm:table-cell">
+                      {formatDate(r.recordDate)}
+                    </td>
+                    <td className="py-3 px-4 font-medium">{r.title}</td>
+                    <td className="py-3 px-4 hidden md:table-cell">
+                      <button
+                        className="hover:underline text-left"
+                        onClick={() => navigate(`/students/${r.student.id}`)}
+                      >
+                        {r.student.firstName} {r.student.lastName}
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-muted-foreground hidden lg:table-cell">
+                      {r.doctor ? `${r.doctor.firstName} ${r.doctor.lastName}` : '—'}
+                    </td>
+                    <td className="py-3 px-4 text-muted-foreground hidden lg:table-cell">{r.hospital ?? '—'}</td>
+                    <td className="py-3 px-4 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/medical/${r.id}`)}
+                      >
+                        View
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-muted-foreground flex-wrap gap-2">
           <span>
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page === 1}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>
               Previous
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page === totalPages}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>
               Next
             </Button>
           </div>

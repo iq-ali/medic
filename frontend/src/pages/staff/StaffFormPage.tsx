@@ -105,7 +105,7 @@ export function StaffFormPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="First Name">
             <Input
               placeholder="Jane"
@@ -134,7 +134,7 @@ export function StaffFormPage() {
 
         {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-1 flex-wrap">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Staff Member'}
           </Button>

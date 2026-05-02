@@ -5,6 +5,7 @@ import {
   FileText,
   CalendarDays,
   UserCog,
+  X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -51,22 +52,41 @@ const navItems: NavItem[] = [
   },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth()
   const visible = navItems.filter((item) => user && item.roles.includes(user.role))
 
   return (
-    <aside className="w-56 shrink-0 h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
-      <div className="px-4 py-5 border-b border-sidebar-border">
+    <aside
+      className={cn(
+        'w-56 shrink-0 h-screen bg-sidebar border-r border-sidebar-border flex flex-col',
+        'fixed inset-y-0 left-0 z-30 transition-transform duration-200',
+        'md:relative md:translate-x-0',
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      )}
+    >
+      <div className="px-4 py-5 border-b border-sidebar-border flex items-center justify-between">
         <span className="text-base font-bold tracking-tight text-sidebar-foreground">
           Medic
         </span>
+        <button
+          onClick={onClose}
+          className="md:hidden p-1 rounded text-sidebar-foreground hover:bg-sidebar-accent"
+        >
+          <X className="size-4" />
+        </button>
       </div>
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {visible.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={onClose}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',

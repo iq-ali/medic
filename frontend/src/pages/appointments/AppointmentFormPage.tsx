@@ -161,7 +161,7 @@ export function AppointmentFormPage() {
           <FieldError message={errors.title?.message} />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Date & Time">
             <Input
               type="datetime-local"
@@ -182,7 +182,7 @@ export function AppointmentFormPage() {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Student">
             <Select
               aria-invalid={!!errors.studentId}
@@ -211,7 +211,7 @@ export function AppointmentFormPage() {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Status">
             <Select aria-invalid={!!errors.status} {...register('status')}>
               <option value="SCHEDULED">Scheduled</option>
@@ -235,7 +235,7 @@ export function AppointmentFormPage() {
 
         {serverError && <p className="text-sm text-destructive">{serverError}</p>}
 
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-1 flex-wrap">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Schedule'}
           </Button>

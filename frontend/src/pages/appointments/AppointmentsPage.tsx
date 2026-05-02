@@ -67,21 +67,21 @@ export function AppointmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="relative w-64">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
+          <div className="relative flex-1 min-w-0 max-w-sm">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Search appointments…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8"
+              className="pl-8 w-full"
             />
           </div>
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-36"
+            className="w-36 shrink-0"
           >
             <option value="">All statuses</option>
             <option value="SCHEDULED">Scheduled</option>
@@ -93,105 +93,98 @@ export function AppointmentsPage() {
         {canWrite && (
           <Button
             size="sm"
+            className="shrink-0"
             onClick={() =>
               navigate(studentId ? `/appointments/new?studentId=${studentId}` : '/appointments/new')
             }
           >
             <Plus />
-            Schedule Appointment
+            Schedule
           </Button>
         )}
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50 border-b border-border">
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Date & Time</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Title</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Student</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Staff</th>
-              <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
-              <th className="py-3 px-4" />
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                  Loading…
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground whitespace-nowrap hidden sm:table-cell">Date & Time</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Title</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground hidden md:table-cell">Student</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground hidden lg:table-cell">Staff</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                <th className="py-3 px-4" />
               </tr>
-            ) : appointments.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                  No appointments found.
-                </td>
-              </tr>
-            ) : (
-              appointments.map((a) => (
-                <tr
-                  key={a.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="py-3 px-4 text-muted-foreground whitespace-nowrap text-xs">
-                    {formatDateTime(a.scheduledAt)}
-                  </td>
-                  <td className="py-3 px-4 font-medium">{a.title}</td>
-                  <td className="py-3 px-4">
-                    <button
-                      className="hover:underline text-left"
-                      onClick={() => navigate(`/students/${a.student.id}`)}
-                    >
-                      {a.student.firstName} {a.student.lastName}
-                    </button>
-                  </td>
-                  <td className="py-3 px-4 text-muted-foreground">
-                    {a.staff ? `${a.staff.firstName} ${a.staff.lastName}` : '—'}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASSES[a.status as AppointmentStatus]}`}
-                    >
-                      {STATUS_LABELS[a.status as AppointmentStatus]}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/appointments/${a.id}`)}
-                    >
-                      View
-                    </Button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                    Loading…
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : appointments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-muted-foreground">
+                    No appointments found.
+                  </td>
+                </tr>
+              ) : (
+                appointments.map((a) => (
+                  <tr
+                    key={a.id}
+                    className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="py-3 px-4 text-muted-foreground whitespace-nowrap text-xs hidden sm:table-cell">
+                      {formatDateTime(a.scheduledAt)}
+                    </td>
+                    <td className="py-3 px-4 font-medium">{a.title}</td>
+                    <td className="py-3 px-4 hidden md:table-cell">
+                      <button
+                        className="hover:underline text-left"
+                        onClick={() => navigate(`/students/${a.student.id}`)}
+                      >
+                        {a.student.firstName} {a.student.lastName}
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-muted-foreground hidden lg:table-cell">
+                      {a.staff ? `${a.staff.firstName} ${a.staff.lastName}` : '—'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_CLASSES[a.status as AppointmentStatus]}`}
+                      >
+                        {STATUS_LABELS[a.status as AppointmentStatus]}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/appointments/${a.id}`)}
+                      >
+                        View
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-muted-foreground flex-wrap gap-2">
           <span>
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
           </span>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page === 1}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 1}>
               Previous
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page === totalPages}
-            >
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page === totalPages}>
               Next
             </Button>
           </div>

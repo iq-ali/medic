@@ -119,7 +119,7 @@ export function StudentFormPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="First Name">
             <Input
               placeholder="John"
@@ -138,7 +138,7 @@ export function StudentFormPage() {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {isEdit && (
             <Field label="Student ID">
               <Input value={existingStudentId} disabled className="font-mono" />
@@ -154,7 +154,7 @@ export function StudentFormPage() {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Date of Birth">
             <Input
               type="date"
@@ -174,7 +174,7 @@ export function StudentFormPage() {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Disability Type">
             <Select aria-invalid={!!errors.disabilityType} {...register('disabilityType')}>
               <option value="">Select type</option>
@@ -194,14 +194,14 @@ export function StudentFormPage() {
         </div>
 
         <Field label="Diagnosis Date (optional)">
-          <Input type="date" {...register('diagnosisDate')} className="w-48" />
+          <Input type="date" {...register('diagnosisDate')} className="w-full sm:w-48" />
         </Field>
 
         {serverError && (
           <p className="text-sm text-destructive">{serverError}</p>
         )}
 
-        <div className="flex gap-3 pt-1">
+        <div className="flex gap-3 pt-1 flex-wrap">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Student'}
           </Button>

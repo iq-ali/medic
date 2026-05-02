@@ -29,9 +29,9 @@ function calcAge(dateStr: string): number {
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="py-3 grid grid-cols-3 gap-4 border-b border-border last:border-0">
+    <div className="py-3 grid grid-cols-1 gap-0.5 sm:grid-cols-3 sm:gap-4 border-b border-border last:border-0">
       <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="text-sm col-span-2">{value ?? '—'}</dd>
+      <dd className="text-sm sm:col-span-2">{value ?? '—'}</dd>
     </div>
   )
 }
@@ -76,27 +76,27 @@ export function StudentDetailPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/students')}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/students')}>
             <ArrowLeft />
           </Button>
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight">
+          <div className="min-w-0">
+            <h2 className="text-xl font-semibold tracking-tight truncate">
               {student.firstName} {student.lastName}
             </h2>
             <p className="text-xs font-mono text-muted-foreground">{student.studentId}</p>
           </div>
         </div>
         {user?.role === 'ADMIN' && (
-          <Button size="sm" onClick={() => navigate(`/students/${id}/edit`)}>
+          <Button size="sm" className="shrink-0" onClick={() => navigate(`/students/${id}/edit`)}>
             <Pencil />
             Edit
           </Button>
         )}
       </div>
 
-      <div className="rounded-xl border border-border px-5">
+      <div className="rounded-xl border border-border px-4 sm:px-5">
         <h3 className="text-sm font-semibold pt-4 pb-2">Personal Information</h3>
         <dl>
           <InfoRow label="Full Name" value={`${student.firstName} ${student.lastName}`} />
@@ -113,8 +113,8 @@ export function StudentDetailPage() {
         </dl>
       </div>
 
-      <div className="rounded-xl border border-border px-5">
-        <div className="flex items-center justify-between pt-4 pb-2">
+      <div className="rounded-xl border border-border px-4 sm:px-5">
+        <div className="flex items-center justify-between pt-4 pb-2 gap-2 flex-wrap">
           <h3 className="text-sm font-semibold">
             Medical Records{' '}
             <span className="font-normal text-muted-foreground">
@@ -139,11 +139,11 @@ export function StudentDetailPage() {
             {student.medicalRecords.map((r) => (
               <div
                 key={r.id}
-                className="py-3 flex items-center justify-between hover:bg-muted/30 -mx-5 px-5 transition-colors cursor-pointer"
+                className="py-3 flex items-center justify-between gap-3 hover:bg-muted/30 -mx-4 sm:-mx-5 px-4 sm:px-5 transition-colors cursor-pointer"
                 onClick={() => navigate(`/medical/${r.id}`)}
               >
-                <p className="text-sm font-medium">{r.title}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-medium truncate">{r.title}</p>
+                <p className="text-xs text-muted-foreground whitespace-nowrap">
                   {new Date(r.recordDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                 </p>
               </div>
@@ -152,8 +152,8 @@ export function StudentDetailPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border px-5">
-        <div className="flex items-center justify-between pt-4 pb-2">
+      <div className="rounded-xl border border-border px-4 sm:px-5">
+        <div className="flex items-center justify-between pt-4 pb-2 gap-2 flex-wrap">
           <h3 className="text-sm font-semibold">
             Appointments{' '}
             <span className="font-normal text-muted-foreground">
@@ -161,11 +161,7 @@ export function StudentDetailPage() {
             </span>
           </h3>
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate(`/appointments?studentId=${id}`)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate(`/appointments?studentId=${id}`)}>
               View all
             </Button>
             {(user?.role === 'ADMIN' || user?.role === 'DOCTOR' || user?.role === 'THERAPIST') && (
@@ -182,17 +178,17 @@ export function StudentDetailPage() {
             {student.appointments.map((a) => (
               <div
                 key={a.id}
-                className="py-3 flex items-center justify-between hover:bg-muted/30 -mx-5 px-5 transition-colors cursor-pointer"
+                className="py-3 flex items-center justify-between gap-3 hover:bg-muted/30 -mx-4 sm:-mx-5 px-4 sm:px-5 transition-colors cursor-pointer"
                 onClick={() => navigate(`/appointments/${a.id}`)}
               >
-                <p className="text-sm font-medium">{a.title}</p>
-                <div className="flex items-center gap-2">
+                <p className="text-sm font-medium truncate">{a.title}</p>
+                <div className="flex items-center gap-2 shrink-0">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CLASSES[a.status as AppointmentStatus]}`}
                   >
                     {STATUS_LABELS[a.status as AppointmentStatus]}
                   </span>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground whitespace-nowrap">
                     {new Date(a.scheduledAt).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -205,7 +201,7 @@ export function StudentDetailPage() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border px-5">
+      <div className="rounded-xl border border-border px-4 sm:px-5">
         <h3 className="text-sm font-semibold pt-4 pb-2">
           Guardians{' '}
           <span className="font-normal text-muted-foreground">({student.guardians.length})</span>
@@ -215,14 +211,14 @@ export function StudentDetailPage() {
         ) : (
           <div className="divide-y divide-border pb-2">
             {student.guardians.map((g) => (
-              <div key={g.id} className="py-3 flex items-center justify-between">
-                <div>
+              <div key={g.id} className="py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
                   <p className="text-sm font-medium">
                     {g.firstName} {g.lastName}
                   </p>
                   <p className="text-xs text-muted-foreground">{g.relationship}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-sm">{g.phone}</p>
                   {g.email && <p className="text-xs text-muted-foreground">{g.email}</p>}
                 </div>
