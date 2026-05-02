@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  THERAPIST
+  TEACHER
+  PARENT
+  STUDENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum DisabilityType {
+  PHYSICAL
+  COGNITIVE
+  SENSORY
+  SPEECH
+  EMOTIONAL
+  MULTIPLE
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student   Student? @relation("StudentUser")
+  staff     Staff?   @relation("StaffUser")
+}
+
+model Student {
+  id             String         @id @default(cuid())
+  studentId      String         @unique
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime
+  gender         Gender
+  grade          String
+  disabilityType DisabilityType
+  disabilitySeverity String?
+  diagnosisDate  DateTime?
+  photoUrl       String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  userId         String?        @unique
+  user           User?          @relation("StudentUser", fields: [userId], references: [id])
+
+  guardians      Guardian[]
+  medicalRecords MedicalRecord[]
+  appointments   Appointment[]
+}
+
+model Guardian {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  relationship String
+  phone        String
+  email        String?
+  createdAt    DateTime @default(now())
+
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id])
+}
+
+model Staff {
+  id         String   @id @default(cuid())
+  firstName  String
+  lastName   String
+  specialty  String?
+  phone      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId     String?  @unique
+  user       User?    @relation("StaffUser", fields: [userId], references: [id])
+
+  appointments  Appointment[]
+  medicalRecords MedicalRecord[]
+}
+
+model MedicalRecord {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  recordDate  DateTime
+  hospital    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id])
+
+  doctorId    String?
+  doctor      Staff?   @relation(fields: [doctorId], references: [id])
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  title       String
+  description String?
+  scheduledAt DateTime
+  durationMin Int               @default(60)
+  status      AppointmentStatus @default(SCHEDULED)
+  location    String?
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  studentId   String
+  student     Student @relation(fields: [studentId], references: [id])
+
+  staffId     String?
+  staff       Staff?  @relation(fields: [staffId], references: [id])
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  MISSED
+  CANCELLED
+}
