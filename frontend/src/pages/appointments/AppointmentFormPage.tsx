@@ -18,7 +18,7 @@ const schema = z.object({
   title: z.string().min(1, 'Title required'),
   description: z.string().optional(),
   scheduledAt: z.string().min(1, 'Date and time required'),
-  durationMin: z.coerce.number().int().min(5, 'Minimum 5 minutes'),
+  durationMin: z.number().int().min(5, 'Minimum 5 minutes'),
   status: z.enum(['SCHEDULED', 'COMPLETED', 'MISSED', 'CANCELLED']),
   location: z.string().optional(),
   notes: z.string().optional(),
@@ -176,7 +176,7 @@ export function AppointmentFormPage() {
               min={5}
               step={5}
               aria-invalid={!!errors.durationMin}
-              {...register('durationMin')}
+              {...register('durationMin', { valueAsNumber: true })}
             />
             <FieldError message={errors.durationMin?.message} />
           </Field>
