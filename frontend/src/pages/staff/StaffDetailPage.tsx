@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { staffService } from '@/services/staff.service'
@@ -25,6 +25,20 @@ export function StaffDetailPage() {
   const [staff, setStaff] = useState<Staff | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [removing, setRemoving] = useState(false)
+
+  async function handleRemove() {
+    if (!id) return
+    setRemoving(true)
+    try {
+      await staffService.remove(id)
+      navigate('/staff')
+    } catch {
+      setRemoving(false)
+      setConfirming(false)
+    }
+  }
 
   useEffect(() => {
     if (!id) return
@@ -78,10 +92,28 @@ export function StaffDetailPage() {
           </div>
         </div>
         {user?.role === 'ADMIN' && (
-          <Button size="sm" className="shrink-0" onClick={() => navigate(`/staff/${id}/edit`)}>
-            <Pencil />
-            Edit
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={() => navigate(`/staff/${id}/edit`)}>
+              <Pencil />
+              Edit
+            </Button>
+            {!confirming ? (
+              <Button size="sm" variant="destructive" onClick={() => setConfirming(true)}>
+                <Trash2 />
+                Remove
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Sure?</span>
+                <Button size="sm" variant="destructive" disabled={removing} onClick={handleRemove}>
+                  {removing ? 'Removing…' : 'Yes, remove'}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+                  Cancel
+                </Button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
