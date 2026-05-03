@@ -91,7 +91,7 @@ export function StaffDetailPage() {
             )}
           </div>
         </div>
-        {user?.role === 'ADMIN' && (
+        {user?.role === 'ADMIN' && staff.user?.role !== 'ADMIN' && (
           <div className="flex items-center gap-2 shrink-0">
             <Button size="sm" variant="outline" onClick={() => navigate(`/staff/${id}/edit`)}>
               <Pencil />

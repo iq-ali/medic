@@ -24,7 +24,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 
   const staff = await prisma.staff.findMany({
     where,
-    include: { user: { select: { role: true, email: true } } },
+    include: { user: { select: { id: true, role: true, email: true } } },
     orderBy: { firstName: 'asc' },
   })
 
@@ -36,7 +36,7 @@ export async function getOne(req: Request, res: Response): Promise<void> {
 
   const staff = await prisma.staff.findUnique({
     where: { id },
-    include: { user: { select: { role: true, email: true } } },
+    include: { user: { select: { id: true, role: true, email: true } } },
   })
 
   if (!staff) {
@@ -79,9 +79,17 @@ export async function update(req: Request, res: Response): Promise<void> {
 export async function remove(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string
 
-  const existing = await prisma.staff.findUnique({ where: { id } })
+  const existing = await prisma.staff.findUnique({
+    where: { id },
+    include: { user: { select: { id: true, role: true } } },
+  })
   if (!existing) {
     res.status(404).json({ message: 'Staff not found' })
+    return
+  }
+
+  if (existing.user?.role === 'ADMIN') {
+    res.status(403).json({ message: 'Admin accounts cannot be removed from here' })
     return
   }
 

@@ -8,7 +8,7 @@ export interface Staff {
   phone?: string | null
   createdAt: string
   updatedAt: string
-  user?: { role: Role; email: string } | null
+  user?: { id: string; role: Role; email: string } | null
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
