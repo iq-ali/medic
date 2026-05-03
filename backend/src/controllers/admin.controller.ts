@@ -31,7 +31,7 @@ export async function approveUser(req: Request, res: Response): Promise<void> {
   await prisma.user.update({ where: { id }, data: { status: 'APPROVED' } })
 
   if (user.personalEmail && user.firstName) {
-    const appUrl = process.env.APP_URL ?? 'http://localhost:5173'
+    const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:5173'
     try {
       await sendApprovalEmail(user.personalEmail, {
         firstName: user.firstName,

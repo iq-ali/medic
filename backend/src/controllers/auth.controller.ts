@@ -125,7 +125,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
     },
   })
 
-  const appUrl = process.env.APP_URL ?? 'http://localhost:5173'
+  const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:5173'
 
   // Send emails — don't let failures break the flow
   try {
