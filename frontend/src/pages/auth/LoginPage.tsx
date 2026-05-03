@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth'
-import type { TwoFARequiredResponse, LoginResponse } from '@/types/auth'
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 

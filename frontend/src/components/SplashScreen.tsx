@@ -56,12 +56,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
               <motion.span
                 key={wordIndex}
                 initial={{ opacity: 0, scale: 0.88 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.08 }}
-                transition={{
-                  enter: { duration: 0.5, ease: 'easeOut' },
-                  exit: { duration: 0.3, ease: 'easeIn' },
-                }}
+                animate={{ opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } }}
+                exit={{ opacity: 0, scale: 1.08, transition: { duration: 0.3, ease: 'easeIn' } }}
                 style={{
                   fontFamily: 'Georgia, "Times New Roman", serif',
                   fontSize: 'clamp(2.5rem, 8vw, 5rem)',
