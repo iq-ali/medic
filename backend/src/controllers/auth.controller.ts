@@ -2,12 +2,152 @@ import type { Request, Response } from 'express'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
+import { generateSecret, verifySync as otpVerifySync, generateURI } from 'otplib'
+import qrcode from 'qrcode'
 import { prisma } from '../prisma.js'
+import { sendWelcomeEmail, sendApprovalEmail } from '../services/email.service.js'
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function signToken(
+  payload: Record<string, unknown>,
+  expiresIn: string | number = '7d'
+): string {
+  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn } as jwt.SignOptions)
+}
+
+function randomPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let out = 'Edu'
+  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)]
+  return out
+}
+
+function sanitizeName(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '')
+}
+
+async function generateOrgEmail(firstName: string, lastName: string, role: string): Promise<string> {
+  const base = `${sanitizeName(firstName)}.${sanitizeName(lastName)}@${role.toLowerCase()}.edupal.org`
+  const existing = await prisma.user.findUnique({ where: { email: base } })
+  if (!existing) return base
+
+  let counter = 2
+  while (true) {
+    const candidate = `${sanitizeName(firstName)}.${sanitizeName(lastName)}${counter}@${role.toLowerCase()}.edupal.org`
+    const exists = await prisma.user.findUnique({ where: { email: candidate } })
+    if (!exists) return candidate
+    counter++
+  }
+}
+
+// ─── Schemas ─────────────────────────────────────────────────────────────────
 
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 })
+
+const signupSchema = z.object({
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  role: z.enum(['DOCTOR', 'THERAPIST', 'TEACHER', 'PARENT', 'STUDENT']),
+  personalEmail: z.string().email(),
+  specialty: z.string().optional(),
+  phone: z.string().optional(),
+})
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+})
+
+const completeTwoFASchema = z.object({
+  twoFAToken: z.string().min(1),
+  code: z.string().min(1),
+})
+
+const verify2FASchema = z.object({
+  code: z.string().min(1),
+})
+
+const disable2FASchema = z.object({
+  password: z.string().min(1),
+})
+
+// ─── Handlers ────────────────────────────────────────────────────────────────
+
+export async function signup(req: Request, res: Response): Promise<void> {
+  const parsed = signupSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ message: 'Invalid request', errors: parsed.error.flatten() })
+    return
+  }
+
+  const { firstName, lastName, role, personalEmail, specialty, phone } = parsed.data
+
+  const orgEmail = await generateOrgEmail(firstName, lastName, role)
+  const defaultPassword = randomPassword()
+  const hashed = await bcrypt.hash(defaultPassword, 10)
+
+  // Check auto-approval setting
+  let settings = await prisma.adminSettings.findFirst()
+  if (!settings) {
+    settings = await prisma.adminSettings.create({ data: {} })
+  }
+  const autoApproved = settings.autoApproval
+
+  const staffRoles = ['DOCTOR', 'THERAPIST', 'TEACHER'] as const
+  const needsStaff = (staffRoles as readonly string[]).includes(role)
+
+  await prisma.user.create({
+    data: {
+      email: orgEmail,
+      password: hashed,
+      role,
+      personalEmail,
+      firstName,
+      lastName,
+      status: autoApproved ? 'APPROVED' : 'PENDING',
+      mustChangePassword: true,
+      ...(needsStaff
+        ? {
+            staff: {
+              create: {
+                firstName,
+                lastName,
+                specialty: specialty ?? null,
+                phone: phone ?? null,
+              },
+            },
+          }
+        : {}),
+    },
+  })
+
+  const appUrl = process.env.APP_URL ?? 'http://localhost:5173'
+
+  // Send emails — don't let failures break the flow
+  try {
+    await sendWelcomeEmail(personalEmail, { firstName, orgEmail, defaultPassword, appUrl })
+  } catch (err) {
+    console.error('Failed to send welcome email:', err)
+  }
+
+  if (autoApproved) {
+    try {
+      await sendApprovalEmail(personalEmail, { firstName, orgEmail, appUrl })
+    } catch (err) {
+      console.error('Failed to send approval email:', err)
+    }
+  }
+
+  res.status(201).json({
+    message: 'Account created',
+    orgEmail,
+    autoApproved,
+  })
+}
 
 export async function login(req: Request, res: Response): Promise<void> {
   const parsed = loginSchema.safeParse(req.body)
@@ -24,24 +164,217 @@ export async function login(req: Request, res: Response): Promise<void> {
     return
   }
 
+  // Check status
+  if (user.status === 'PENDING') {
+    res.status(401).json({ message: 'Your account is pending administrator approval' })
+    return
+  }
+
   const valid = await bcrypt.compare(password, user.password)
   if (!valid) {
     res.status(401).json({ message: 'Invalid credentials' })
     return
   }
 
-  const token = jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET!,
-    { expiresIn: '7d' }
-  )
+  // 2FA flow
+  if (user.twoFAEnabled && user.twoFASecret) {
+    const twoFAToken = signToken({ id: user.id, type: '2fa' }, '15m')
+    res.json({ requires2FA: true, twoFAToken })
+    return
+  }
+
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    mustChangePassword: user.mustChangePassword,
+  })
 
   res.json({
     token,
-    user: { id: user.id, email: user.email, role: user.role },
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      twoFAEnabled: user.twoFAEnabled,
+    },
+  })
+}
+
+export async function completeTwoFA(req: Request, res: Response): Promise<void> {
+  const parsed = completeTwoFASchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ message: 'Invalid request' })
+    return
+  }
+
+  const { twoFAToken, code } = parsed.data
+
+  let payload: { id: string; type: string }
+  try {
+    payload = jwt.verify(twoFAToken, process.env.JWT_SECRET!) as { id: string; type: string }
+  } catch {
+    res.status(401).json({ message: 'Invalid or expired 2FA token' })
+    return
+  }
+
+  if (payload.type !== '2fa') {
+    res.status(401).json({ message: 'Invalid token type' })
+    return
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: payload.id } })
+  if (!user || !user.twoFASecret) {
+    res.status(401).json({ message: 'Invalid token' })
+    return
+  }
+
+  const valid = otpVerifySync({ token: code, secret: user.twoFASecret })
+  if (!valid) {
+    res.status(401).json({ message: 'Invalid 2FA code' })
+    return
+  }
+
+  const token = signToken({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    mustChangePassword: user.mustChangePassword,
+  })
+
+  res.json({
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      twoFAEnabled: user.twoFAEnabled,
+    },
   })
 }
 
 export async function me(req: Request, res: Response): Promise<void> {
-  res.json({ user: req.user })
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
+  if (!user) {
+    res.status(404).json({ message: 'User not found' })
+    return
+  }
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      twoFAEnabled: user.twoFAEnabled,
+    },
+  })
+}
+
+export async function changePassword(req: Request, res: Response): Promise<void> {
+  const parsed = changePasswordSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Invalid request' })
+    return
+  }
+
+  const { currentPassword, newPassword } = parsed.data
+  const userId = req.user!.id
+
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) {
+    res.status(404).json({ message: 'User not found' })
+    return
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.password)
+  if (!valid) {
+    res.status(401).json({ message: 'Current password is incorrect' })
+    return
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10)
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password: hashed, mustChangePassword: false },
+  })
+
+  res.json({ message: 'Password changed' })
+}
+
+export async function setup2FA(req: Request, res: Response): Promise<void> {
+  const userId = req.user!.id
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) {
+    res.status(404).json({ message: 'User not found' })
+    return
+  }
+
+  const secret = generateSecret()
+  const otpauthUrl = generateURI({ label: `EduPal:${user.email}`, secret, issuer: 'EduPal' })
+  const qrCode = await qrcode.toDataURL(otpauthUrl)
+
+  await prisma.user.update({ where: { id: userId }, data: { twoFASecret: secret } })
+
+  res.json({ secret, qrCode })
+}
+
+export async function verify2FA(req: Request, res: Response): Promise<void> {
+  const parsed = verify2FASchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ message: 'Invalid request' })
+    return
+  }
+
+  const userId = req.user!.id
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user || !user.twoFASecret) {
+    res.status(400).json({ message: '2FA setup not initiated' })
+    return
+  }
+
+  const valid = otpVerifySync({ token: parsed.data.code, secret: user.twoFASecret })
+  if (!valid) {
+    res.status(401).json({ message: 'Invalid 2FA code' })
+    return
+  }
+
+  await prisma.user.update({ where: { id: userId }, data: { twoFAEnabled: true } })
+
+  res.json({ message: '2FA enabled' })
+}
+
+export async function disable2FA(req: Request, res: Response): Promise<void> {
+  const parsed = disable2FASchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ message: 'Invalid request' })
+    return
+  }
+
+  const userId = req.user!.id
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) {
+    res.status(404).json({ message: 'User not found' })
+    return
+  }
+
+  const valid = await bcrypt.compare(parsed.data.password, user.password)
+  if (!valid) {
+    res.status(401).json({ message: 'Incorrect password' })
+    return
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { twoFAEnabled: false, twoFASecret: null },
+  })
+
+  res.json({ message: '2FA disabled' })
 }

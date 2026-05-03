@@ -1,0 +1,22 @@
+import { Router } from 'express'
+import {
+  getPendingUsers,
+  approveUser,
+  rejectUser,
+  getSettings,
+  updateSettings,
+} from '../controllers/admin.controller.js'
+import { authenticate } from '../middleware/auth.js'
+import { requireRole } from '../middleware/rbac.js'
+
+const router = Router()
+
+router.use(authenticate, requireRole('ADMIN'))
+
+router.get('/pending-users', getPendingUsers)
+router.post('/users/:id/approve', approveUser)
+router.delete('/users/:id', rejectUser)
+router.get('/settings', getSettings)
+router.put('/settings', updateSettings)
+
+export default router

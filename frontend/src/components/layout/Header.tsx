@@ -9,6 +9,8 @@ const pageTitles: Record<string, string> = {
   '/medical': 'Medical Records',
   '/appointments': 'Appointments',
   '/staff': 'Staff',
+  '/profile': 'Profile',
+  '/admin/settings': 'Admin Settings',
 }
 
 function roleLabel(role: string): string {
@@ -22,7 +24,7 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
-  const title = pageTitles[pathname] ?? 'Medic'
+  const title = pageTitles[pathname] ?? 'EduPal'
   const username = user?.email.split('@')[0] ?? ''
 
   return (

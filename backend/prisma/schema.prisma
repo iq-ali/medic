@@ -16,6 +16,11 @@ enum Role {
   STUDENT
 }
 
+enum UserStatus {
+  PENDING
+  APPROVED
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -33,15 +38,29 @@ enum DisabilityType {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String     @id @default(cuid())
+  email             String     @unique
+  password          String
+  role              Role
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  personalEmail     String?
+  firstName         String?
+  lastName          String?
+  status            UserStatus @default(APPROVED)
+  mustChangePassword Boolean   @default(false)
+  twoFASecret       String?
+  twoFAEnabled      Boolean    @default(false)
 
   student   Student? @relation("StudentUser")
   staff     Staff?   @relation("StaffUser")
+}
+
+model AdminSettings {
+  id           String   @id @default(cuid())
+  autoApproval Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
 }
 
 model Student {

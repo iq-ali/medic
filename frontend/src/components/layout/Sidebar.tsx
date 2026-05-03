@@ -6,6 +6,8 @@ import {
   FileText,
   CalendarDays,
   UserCog,
+  User,
+  Settings,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -51,6 +53,18 @@ const navItems: NavItem[] = [
     icon: UserCog,
     roles: ['ADMIN'],
   },
+  {
+    label: 'Profile',
+    to: '/profile',
+    icon: User,
+    roles: ['ADMIN', 'DOCTOR', 'THERAPIST', 'TEACHER', 'PARENT', 'STUDENT'],
+  },
+  {
+    label: 'Settings',
+    to: '/admin/settings',
+    icon: Settings,
+    roles: ['ADMIN'],
+  },
 ]
 
 interface SidebarProps {
@@ -73,7 +87,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       <div className="px-4 py-5 border-b border-sidebar-border flex items-center justify-between">
         <span className="text-base font-bold tracking-tight text-sidebar-foreground">
-          Medic
+          EduPal
         </span>
         <button
           onClick={onClose}

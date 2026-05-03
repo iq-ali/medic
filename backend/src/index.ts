@@ -2,6 +2,7 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import authRoutes from './routes/auth.js'
+import adminRoutes from './routes/admin.js'
 import dashboardRoutes from './routes/dashboard.js'
 import studentsRoutes from './routes/students.js'
 import staffRoutes from './routes/staff.js'
@@ -22,6 +23,7 @@ app.get('/api/health', (_req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+app.use('/api/admin', adminRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/students', studentsRoutes)
 app.use('/api/staff', staffRoutes)

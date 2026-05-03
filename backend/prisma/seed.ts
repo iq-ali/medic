@@ -3,59 +3,48 @@ import bcrypt from 'bcrypt'
 
 const prisma = new PrismaClient()
 
-const users = [
-  {
-    email: 'admin@medic.local',
-    password: 'Admin@1234',
-    role: 'ADMIN' as const,
-    firstName: 'System',
-    lastName: 'Admin',
-  },
-  {
-    email: 'doctor@medic.local',
-    password: 'Doctor@1234',
-    role: 'DOCTOR' as const,
-    firstName: 'Sarah',
-    lastName: 'Chen',
-    specialty: 'Pediatric Neurology',
-  },
-  {
-    email: 'therapist@medic.local',
-    password: 'Therapist@1234',
-    role: 'THERAPIST' as const,
-    firstName: 'James',
-    lastName: 'Okafor',
-    specialty: 'Occupational Therapy',
-  },
-  {
-    email: 'teacher@medic.local',
-    password: 'Teacher@1234',
-    role: 'TEACHER' as const,
-    firstName: 'Maria',
-    lastName: 'Santos',
-  },
-]
-
 async function main() {
-  for (const u of users) {
-    const hashed = await bcrypt.hash(u.password, 10)
+  const adminEmail = process.env.ADMIN_EMAIL
+  const adminPassword = process.env.ADMIN_PASSWORD
+
+  if (!adminEmail || !adminPassword) {
+    console.warn('⚠️  ADMIN_EMAIL and ADMIN_PASSWORD env vars are required. Skipping admin seed.')
+  } else {
+    const adminFirstName = process.env.ADMIN_FIRST_NAME ?? 'System'
+    const adminLastName = process.env.ADMIN_LAST_NAME ?? 'Admin'
+    const adminPersonalEmail = process.env.ADMIN_PERSONAL_EMAIL ?? adminEmail
+
+    const hashed = await bcrypt.hash(adminPassword, 10)
     await prisma.user.upsert({
-      where: { email: u.email },
+      where: { email: adminEmail },
       update: {},
       create: {
-        email: u.email,
+        email: adminEmail,
         password: hashed,
-        role: u.role,
+        role: 'ADMIN',
+        firstName: adminFirstName,
+        lastName: adminLastName,
+        personalEmail: adminPersonalEmail,
+        status: 'APPROVED',
+        mustChangePassword: false,
         staff: {
           create: {
-            firstName: u.firstName,
-            lastName: u.lastName,
-            specialty: u.specialty,
+            firstName: adminFirstName,
+            lastName: adminLastName,
           },
         },
       },
     })
-    console.log(`Seeded: ${u.email} (${u.role})`)
+    console.log(`Seeded admin: ${adminEmail}`)
+  }
+
+  // Upsert AdminSettings
+  const existing = await prisma.adminSettings.findFirst()
+  if (!existing) {
+    await prisma.adminSettings.create({ data: { autoApproval: false } })
+    console.log('Created AdminSettings (autoApproval=false)')
+  } else {
+    console.log('AdminSettings already exists, skipping.')
   }
 }
 

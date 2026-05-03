@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from './pages/auth/LoginPage'
+import { SignupPage } from './pages/auth/SignupPage'
+import { ChangePasswordPage } from './pages/auth/ChangePasswordPage'
 import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
+import { SplashScreen } from './components/SplashScreen'
 import { DashboardPage } from './pages/dashboard/DashboardPage'
 import { StudentsPage } from './pages/students/StudentsPage'
 import { StudentDetailPage } from './pages/students/StudentDetailPage'
@@ -16,12 +19,19 @@ import { MedicalFormPage } from './pages/medical/MedicalFormPage'
 import { AppointmentsPage } from './pages/appointments/AppointmentsPage'
 import { AppointmentDetailPage } from './pages/appointments/AppointmentDetailPage'
 import { AppointmentFormPage } from './pages/appointments/AppointmentFormPage'
+import { ProfilePage } from './pages/profile/ProfilePage'
+import { AdminSettingsPage } from './pages/admin/AdminSettingsPage'
 import { useAuthStore } from './store/auth'
 import { authService } from './services/auth.service'
+
+const SPLASH_KEY = 'edupal_splash_shown'
 
 function App() {
   const { setAuth, logout } = useAuthStore()
   const [hydrated, setHydrated] = useState(false)
+  const [splashDone, setSplashDone] = useState(
+    () => sessionStorage.getItem(SPLASH_KEY) === '1'
+  )
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -42,12 +52,35 @@ function App() {
       })
   }, [setAuth, logout])
 
+  function handleSplashComplete() {
+    sessionStorage.setItem(SPLASH_KEY, '1')
+    setSplashDone(true)
+  }
+
+  if (!splashDone) {
+    return <SplashScreen onComplete={handleSplashComplete} />
+  }
+
   if (!hydrated) return null
 
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+
+        {/* Standalone protected — no AppShell */}
+        <Route
+          path="/change-password"
+          element={
+            <ProtectedRoute>
+              <ChangePasswordPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* App shell */}
         <Route
           element={
             <ProtectedRoute>
@@ -76,7 +109,11 @@ function App() {
           <Route path="/appointments/new" element={<AppointmentFormPage />} />
           <Route path="/appointments/:id" element={<AppointmentDetailPage />} />
           <Route path="/appointments/:id/edit" element={<AppointmentFormPage />} />
+
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin/settings" element={<AdminSettingsPage />} />
         </Route>
+
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
