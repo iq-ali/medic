@@ -70,3 +70,9 @@ export interface AdminSettings {
   autoApproval: boolean
   updatedAt: string
 }
+
+export interface UpdateProfileRequest {
+  firstName: string
+  lastName: string
+  email: string
+}

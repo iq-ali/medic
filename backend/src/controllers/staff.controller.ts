@@ -12,15 +12,22 @@ const staffSchema = z.object({
 export async function list(req: Request, res: Response): Promise<void> {
   const { search = '' } = req.query as Record<string, string>
 
+  const noAdmin = { NOT: [{ user: { role: 'ADMIN' as const } }] }
+
   const where = search
     ? {
-        OR: [
-          { firstName: { contains: search, mode: 'insensitive' as const } },
-          { lastName: { contains: search, mode: 'insensitive' as const } },
-          { specialty: { contains: search, mode: 'insensitive' as const } },
+        AND: [
+          noAdmin,
+          {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' as const } },
+              { lastName: { contains: search, mode: 'insensitive' as const } },
+              { specialty: { contains: search, mode: 'insensitive' as const } },
+            ],
+          },
         ],
       }
-    : {}
+    : noAdmin
 
   const staff = await prisma.staff.findMany({
     where,

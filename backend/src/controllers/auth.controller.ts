@@ -75,6 +75,17 @@ const disable2FASchema = z.object({
   password: z.string().min(1),
 })
 
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1, 'First name required'),
+  lastName: z.string().min(1, 'Last name required'),
+  email: z
+    .string()
+    .email('Valid email required')
+    .refine((e) => e.toLowerCase().endsWith('edupal.org'), {
+      message: 'Email must use the @edupal.org domain',
+    }),
+})
+
 // ─── Handlers ────────────────────────────────────────────────────────────────
 
 export async function signup(req: Request, res: Response): Promise<void> {
@@ -377,4 +388,43 @@ export async function disable2FA(req: Request, res: Response): Promise<void> {
   })
 
   res.json({ message: '2FA disabled' })
+}
+
+export async function updateProfile(req: Request, res: Response): Promise<void> {
+  if (req.user!.role !== 'ADMIN') {
+    res.status(403).json({ message: 'Forbidden' })
+    return
+  }
+
+  const parsed = updateProfileSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Invalid request' })
+    return
+  }
+
+  const { firstName, lastName, email } = parsed.data
+  const userId = req.user!.id
+
+  const taken = await prisma.user.findFirst({ where: { email, NOT: { id: userId } } })
+  if (taken) {
+    res.status(409).json({ message: 'Email already in use' })
+    return
+  }
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { firstName, lastName, email },
+  })
+
+  res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      mustChangePassword: user.mustChangePassword,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      twoFAEnabled: user.twoFAEnabled,
+    },
+  })
 }

@@ -8,6 +8,7 @@ import {
   setup2FA,
   verify2FA,
   disable2FA,
+  updateProfile,
 } from '../controllers/auth.controller.js'
 import { authenticate } from '../middleware/auth.js'
 
@@ -21,5 +22,6 @@ router.post('/change-password', authenticate, changePassword)
 router.post('/2fa/setup', authenticate, setup2FA)
 router.post('/2fa/verify', authenticate, verify2FA)
 router.post('/2fa/disable', authenticate, disable2FA)
+router.patch('/profile', authenticate, updateProfile)
 
 export default router

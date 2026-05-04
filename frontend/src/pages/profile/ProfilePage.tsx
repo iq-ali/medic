@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { ShieldCheck, ShieldOff, KeyRound } from 'lucide-react'
+import { ShieldCheck, ShieldOff, KeyRound, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/services/auth.service'
@@ -12,6 +12,17 @@ import { sectionContainerVariants, sectionVariants } from '@/lib/animations'
 import type { Setup2FAResponse } from '@/types/auth'
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, 'Required'),
+  lastName: z.string().min(1, 'Required'),
+  email: z
+    .string()
+    .email('Valid email required')
+    .refine((e) => e.toLowerCase().endsWith('edupal.org'), {
+      message: 'Email must use the @edupal.org domain',
+    }),
+})
 
 const pwSchema = z
   .object({
@@ -32,6 +43,7 @@ const verify2FASchema = z.object({
   code: z.string().length(6, 'Must be 6 digits'),
 })
 
+type ProfileFormData = z.infer<typeof profileSchema>
 type PwFormData = z.infer<typeof pwSchema>
 type Disable2FAData = z.infer<typeof disable2FASchema>
 type Verify2FAData = z.infer<typeof verify2FASchema>
@@ -42,15 +54,41 @@ export function ProfilePage() {
   const user = useAuthStore((s) => s.user)
   const updateUser = useAuthStore((s) => s.updateUser)
 
+  const isAdmin = user?.role === 'ADMIN'
+
+  const [profileSuccess, setProfileSuccess] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
+
   const [pwSuccess, setPwSuccess] = useState(false)
   const [pwError, setPwError] = useState<string | null>(null)
 
   const [setup2FAData, setSetup2FAData] = useState<Setup2FAResponse | null>(null)
   const [twoFAActionError, setTwoFAActionError] = useState<string | null>(null)
 
+  const profileForm = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      email: user?.email ?? '',
+    },
+  })
+
   const pwForm = useForm<PwFormData>({ resolver: zodResolver(pwSchema) })
   const disable2FAForm = useForm<Disable2FAData>({ resolver: zodResolver(disable2FASchema) })
   const verify2FAForm = useForm<Verify2FAData>({ resolver: zodResolver(verify2FASchema) })
+
+  async function onUpdateProfile(data: ProfileFormData) {
+    setProfileError(null)
+    setProfileSuccess(false)
+    try {
+      const { user: updated } = await authService.updateProfile(data)
+      updateUser({ firstName: updated.firstName, lastName: updated.lastName, email: updated.email })
+      setProfileSuccess(true)
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : 'Failed to update profile')
+    }
+  }
 
   async function onChangePassword(data: PwFormData) {
     setPwError(null)
@@ -119,6 +157,72 @@ export function ProfilePage() {
         <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{user?.email}</p>
       </motion.div>
+
+      {/* Personal Information — admin only */}
+      {isAdmin && (
+        <motion.div variants={sectionVariants} className="rounded-xl border border-border bg-card p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <UserRound className="size-4 text-muted-foreground" />
+            <h2 className="text-base font-semibold">Personal information</h2>
+          </div>
+
+          <form onSubmit={profileForm.handleSubmit(onUpdateProfile)} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">First name</label>
+                <Input
+                  placeholder="First name"
+                  aria-invalid={!!profileForm.formState.errors.firstName}
+                  {...profileForm.register('firstName')}
+                />
+                {profileForm.formState.errors.firstName && (
+                  <p className="text-xs text-destructive">
+                    {profileForm.formState.errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Last name</label>
+                <Input
+                  placeholder="Last name"
+                  aria-invalid={!!profileForm.formState.errors.lastName}
+                  {...profileForm.register('lastName')}
+                />
+                {profileForm.formState.errors.lastName && (
+                  <p className="text-xs text-destructive">
+                    {profileForm.formState.errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                placeholder="admin@edupal.org"
+                aria-invalid={!!profileForm.formState.errors.email}
+                {...profileForm.register('email')}
+              />
+              {profileForm.formState.errors.email && (
+                <p className="text-xs text-destructive">
+                  {profileForm.formState.errors.email.message}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">Must remain on the @edupal.org domain</p>
+            </div>
+
+            {profileError && <p className="text-sm text-destructive">{profileError}</p>}
+            {profileSuccess && (
+              <p className="text-sm text-green-600 dark:text-green-400">Profile updated.</p>
+            )}
+
+            <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+              {profileForm.formState.isSubmitting ? 'Saving…' : 'Save changes'}
+            </Button>
+          </form>
+        </motion.div>
+      )}
 
       {/* Change Password */}
       <motion.div variants={sectionVariants} className="rounded-xl border border-border bg-card p-5 space-y-4">

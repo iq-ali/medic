@@ -9,6 +9,7 @@ import type {
   ChangePasswordRequest,
   Setup2FAResponse,
   CompleteTwoFARequest,
+  UpdateProfileRequest,
 } from '../types/auth'
 
 export const authService = {
@@ -32,4 +33,7 @@ export const authService = {
 
   completeTwoFA: (data: CompleteTwoFARequest) =>
     api.post<LoginResponse>('/auth/2fa/complete', data),
+
+  updateProfile: (data: UpdateProfileRequest) =>
+    api.patch<{ user: AuthUser }>('/auth/profile', data),
 }
