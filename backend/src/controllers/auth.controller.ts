@@ -84,6 +84,7 @@ const updateProfileSchema = z.object({
     .refine((e) => e.toLowerCase().endsWith('edupal.org'), {
       message: 'Email must use the @edupal.org domain',
     }),
+  password: z.string().min(1, 'Password is required to confirm changes'),
 })
 
 // ─── Handlers ────────────────────────────────────────────────────────────────
@@ -402,8 +403,20 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     return
   }
 
-  const { firstName, lastName, email } = parsed.data
+  const { firstName, lastName, email, password } = parsed.data
   const userId = req.user!.id
+
+  const existing = await prisma.user.findUnique({ where: { id: userId } })
+  if (!existing) {
+    res.status(404).json({ message: 'User not found' })
+    return
+  }
+
+  const valid = await bcrypt.compare(password, existing.password)
+  if (!valid) {
+    res.status(401).json({ message: 'Incorrect password' })
+    return
+  }
 
   const taken = await prisma.user.findFirst({ where: { email, NOT: { id: userId } } })
   if (taken) {

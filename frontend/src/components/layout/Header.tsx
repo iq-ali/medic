@@ -25,7 +25,10 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth()
   const { pathname } = useLocation()
   const title = pageTitles[pathname] ?? 'EduPal'
-  const username = user?.email.split('@')[0] ?? ''
+  const username =
+    user?.firstName && user?.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : (user?.email.split('@')[0] ?? '')
 
   return (
     <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-6 shrink-0 gap-3">
