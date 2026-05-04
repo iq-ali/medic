@@ -40,15 +40,19 @@ function App() {
       return
     }
 
+    // Restore from localStorage immediately — no flicker, no forced logout on cold start
+    setHydrated(true)
+
+    // Verify in the background and refresh user data
     authService
       .me()
-      .then(({ user }) => {
-        setAuth(user, token)
-        setHydrated(true)
-      })
-      .catch(() => {
-        logout()
-        setHydrated(true)
+      .then(({ user }) => setAuth(user, token))
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : ''
+        // Only logout on explicit auth rejection — not on network/server errors
+        if (msg === 'Unauthorized' || msg === 'Invalid token') {
+          logout()
+        }
       })
   }, [setAuth, logout])
 
