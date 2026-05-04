@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { studentsService } from '@/services/students.service'
 import { useAuth } from '@/hooks/useAuth'
+import { usePasswordGate } from '@/hooks/usePasswordGate'
 import { DISABILITY_LABELS, GENDER_LABELS } from '@/types/student'
 import { STATUS_LABELS, STATUS_CLASSES } from '@/types/appointment'
 import { sectionContainerVariants, sectionVariants } from '@/lib/animations'
@@ -42,6 +43,7 @@ export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { gateAction, modal } = usePasswordGate()
   const [student, setStudent] = useState<StudentWithRelations | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -77,6 +79,7 @@ export function StudentDetailPage() {
   }
 
   return (
+    <>
     <motion.div
       variants={sectionContainerVariants}
       initial="initial"
@@ -96,10 +99,19 @@ export function StudentDetailPage() {
           </div>
         </div>
         {user?.role === 'ADMIN' && (
-          <Button size="sm" className="shrink-0" onClick={() => navigate(`/students/${id}/edit`)}>
-            <Pencil />
-            Edit
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={gateAction(async () => navigate(`/students/${id}/edit`))}>
+              <Pencil />
+              Edit
+            </Button>
+            <Button size="sm" variant="destructive" onClick={gateAction(async () => {
+              await studentsService.remove(id!)
+              navigate('/students')
+            })}>
+              <Trash2 />
+              Delete
+            </Button>
+          </div>
         )}
       </div>
 
@@ -235,5 +247,7 @@ export function StudentDetailPage() {
         )}
       </motion.div>
     </motion.div>
+    {modal}
+    </>
   )
 }

@@ -22,8 +22,10 @@ export async function list(req: Request, res: Response): Promise<void> {
   const { search = '', studentId, page = '1', pageSize = '20' } = req.query as Record<string, string>
   const skip = (parseInt(page) - 1) * parseInt(pageSize)
   const take = parseInt(pageSize)
+  const isAdmin = req.user?.role === 'ADMIN'
 
   const where: Prisma.MedicalRecordWhereInput = {}
+  if (!isAdmin) where.approvalStatus = 'APPROVED'
   if (studentId) where.studentId = studentId
   if (search) {
     where.OR = [
@@ -42,9 +44,15 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getOne(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string
+  const isAdmin = req.user?.role === 'ADMIN'
 
   const record = await prisma.medicalRecord.findUnique({ where: { id }, include })
   if (!record) {
+    res.status(404).json({ message: 'Medical record not found' })
+    return
+  }
+
+  if (!isAdmin && record.approvalStatus !== 'APPROVED') {
     res.status(404).json({ message: 'Medical record not found' })
     return
   }
@@ -59,8 +67,16 @@ export async function create(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const record = await prisma.medicalRecord.create({ data: parsed.data, include })
-  res.status(201).json({ record })
+  const isAdmin = req.user!.role === 'ADMIN'
+  const record = await prisma.medicalRecord.create({
+    data: {
+      ...parsed.data,
+      approvalStatus: isAdmin ? 'APPROVED' : 'PENDING',
+      submittedById: isAdmin ? null : req.user!.id,
+    },
+    include,
+  })
+  res.status(201).json({ record, pending: !isAdmin })
 }
 
 export async function update(req: Request, res: Response): Promise<void> {

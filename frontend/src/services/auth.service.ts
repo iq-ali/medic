@@ -36,4 +36,7 @@ export const authService = {
 
   updateProfile: (data: UpdateProfileRequest) =>
     api.patch<{ user: AuthUser }>('/auth/profile', data),
+
+  verifyPassword: (password: string) =>
+    api.post<{ verified: true }>('/auth/verify-password', { password }),
 }

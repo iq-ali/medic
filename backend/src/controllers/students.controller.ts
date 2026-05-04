@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma.js'
 
 const studentSchema = z.object({
@@ -29,16 +30,20 @@ export async function list(req: Request, res: Response): Promise<void> {
   const { search = '', page = '1', pageSize = '20' } = req.query as Record<string, string>
   const skip = (parseInt(page) - 1) * parseInt(pageSize)
   const take = parseInt(pageSize)
+  const isAdmin = req.user?.role === 'ADMIN'
 
-  const where = search
-    ? {
-        OR: [
-          { firstName: { contains: search, mode: 'insensitive' as const } },
-          { lastName: { contains: search, mode: 'insensitive' as const } },
-          { studentId: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }
-    : {}
+  let where: Prisma.StudentWhereInput = isAdmin ? {} : { approvalStatus: 'APPROVED' }
+
+  if (search) {
+    where = {
+      ...where,
+      OR: [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { studentId: { contains: search, mode: 'insensitive' } },
+      ],
+    }
+  }
 
   const [students, total] = await Promise.all([
     prisma.student.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
@@ -50,16 +55,20 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getOne(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string
+  const isAdmin = req.user?.role === 'ADMIN'
+
   const student = await prisma.student.findUnique({
     where: { id },
     include: {
       guardians: true,
       medicalRecords: {
+        where: isAdmin ? {} : { approvalStatus: 'APPROVED' },
         include: { doctor: { select: { firstName: true, lastName: true } } },
         orderBy: { recordDate: 'desc' },
         take: 5,
       },
       appointments: {
+        where: isAdmin ? {} : { approvalStatus: 'APPROVED' },
         include: { staff: { select: { firstName: true, lastName: true } } },
         orderBy: { scheduledAt: 'desc' },
         take: 5,
@@ -68,6 +77,11 @@ export async function getOne(req: Request, res: Response): Promise<void> {
   })
 
   if (!student) {
+    res.status(404).json({ message: 'Student not found' })
+    return
+  }
+
+  if (!isAdmin && student.approvalStatus !== 'APPROVED') {
     res.status(404).json({ message: 'Student not found' })
     return
   }
@@ -82,9 +96,17 @@ export async function create(req: Request, res: Response): Promise<void> {
     return
   }
 
+  const isAdmin = req.user!.role === 'ADMIN'
   const studentId = await generateStudentId()
-  const student = await prisma.student.create({ data: { ...parsed.data, studentId } })
-  res.status(201).json({ student })
+  const student = await prisma.student.create({
+    data: {
+      ...parsed.data,
+      studentId,
+      approvalStatus: isAdmin ? 'APPROVED' : 'PENDING',
+      submittedById: isAdmin ? null : req.user!.id,
+    },
+  })
+  res.status(201).json({ student, pending: !isAdmin })
 }
 
 export async function update(req: Request, res: Response): Promise<void> {
@@ -107,6 +129,7 @@ export async function update(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string
+
   const existing = await prisma.student.findUnique({ where: { id } })
   if (!existing) {
     res.status(404).json({ message: 'Student not found' })

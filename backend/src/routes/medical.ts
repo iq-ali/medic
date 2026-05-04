@@ -7,8 +7,8 @@ const router = Router()
 
 router.get('/', authenticate, list)
 router.get('/:id', authenticate, getOne)
-router.post('/', authenticate, requireRole('ADMIN', 'DOCTOR'), create)
-router.put('/:id', authenticate, requireRole('ADMIN', 'DOCTOR'), update)
+router.post('/', authenticate, requireRole('ADMIN', 'DOCTOR', 'THERAPIST'), create)
+router.put('/:id', authenticate, requireRole('ADMIN', 'DOCTOR', 'THERAPIST'), update)
 router.delete('/:id', authenticate, requireRole('ADMIN'), remove)
 
 export default router

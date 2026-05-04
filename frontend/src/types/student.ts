@@ -8,6 +8,8 @@ export type DisabilityType =
   | 'MULTIPLE'
   | 'OTHER'
 
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
 export interface Student {
   id: string
   studentId: string
@@ -20,6 +22,8 @@ export interface Student {
   disabilitySeverity?: string | null
   diagnosisDate?: string | null
   photoUrl?: string | null
+  approvalStatus: ApprovalStatus
+  submittedById?: string | null
   createdAt: string
   updatedAt: string
 }

@@ -1,3 +1,5 @@
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
 export interface MedicalRecord {
   id: string
   title: string
@@ -5,6 +7,8 @@ export interface MedicalRecord {
   recordDate: string
   hospital?: string | null
   notes?: string | null
+  approvalStatus: ApprovalStatus
+  submittedById?: string | null
   createdAt: string
   updatedAt: string
   studentId: string

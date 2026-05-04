@@ -1,4 +1,5 @@
 export type AppointmentStatus = 'SCHEDULED' | 'COMPLETED' | 'MISSED' | 'CANCELLED'
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 
 export interface Appointment {
   id: string
@@ -9,6 +10,8 @@ export interface Appointment {
   status: AppointmentStatus
   location?: string | null
   notes?: string | null
+  approvalStatus: ApprovalStatus
+  submittedById?: string | null
   createdAt: string
   updatedAt: string
   studentId: string

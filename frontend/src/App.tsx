@@ -21,6 +21,7 @@ import { AppointmentDetailPage } from './pages/appointments/AppointmentDetailPag
 import { AppointmentFormPage } from './pages/appointments/AppointmentFormPage'
 import { ProfilePage } from './pages/profile/ProfilePage'
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage'
+import { PendingRecordsPage } from './pages/admin/PendingRecordsPage'
 import { useAuthStore } from './store/auth'
 import { authService } from './services/auth.service'
 
@@ -116,6 +117,7 @@ function App() {
 
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin/settings" element={<AdminSettingsPage />} />
+          <Route path="/admin/pending-records" element={<PendingRecordsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

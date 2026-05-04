@@ -441,3 +441,22 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     },
   })
 }
+
+export async function verifyPassword(req: Request, res: Response): Promise<void> {
+  const { password } = req.body as { password?: string }
+  if (!password) {
+    res.status(400).json({ message: 'Password required' })
+    return
+  }
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
+  if (!user) {
+    res.status(404).json({ message: 'User not found' })
+    return
+  }
+  const valid = await bcrypt.compare(password, user.password)
+  if (!valid) {
+    res.status(401).json({ message: 'Incorrect password' })
+    return
+  }
+  res.json({ verified: true })
+}

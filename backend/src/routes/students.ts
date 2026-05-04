@@ -7,7 +7,7 @@ const router = Router()
 
 router.get('/', authenticate, list)
 router.get('/:id', authenticate, getOne)
-router.post('/', authenticate, requireRole('ADMIN'), create)
+router.post('/', authenticate, requireRole('ADMIN', 'TEACHER'), create)
 router.put('/:id', authenticate, requireRole('ADMIN'), update)
 router.delete('/:id', authenticate, requireRole('ADMIN'), remove)
 

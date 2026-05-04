@@ -8,6 +8,7 @@ import {
   UserCog,
   User,
   Settings,
+  ClipboardList,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -58,6 +59,12 @@ const navItems: NavItem[] = [
     to: '/profile',
     icon: User,
     roles: ['ADMIN', 'DOCTOR', 'THERAPIST', 'TEACHER', 'PARENT', 'STUDENT'],
+  },
+  {
+    label: 'Pending records',
+    to: '/admin/pending-records',
+    icon: ClipboardList,
+    roles: ['ADMIN'],
   },
   {
     label: 'Settings',

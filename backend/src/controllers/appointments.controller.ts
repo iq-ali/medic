@@ -34,8 +34,10 @@ export async function list(req: Request, res: Response): Promise<void> {
 
   const skip = (parseInt(page) - 1) * parseInt(pageSize)
   const take = parseInt(pageSize)
+  const isAdmin = req.user?.role === 'ADMIN'
 
   const where: Prisma.AppointmentWhereInput = {}
+  if (!isAdmin) where.approvalStatus = 'APPROVED'
   if (studentId) where.studentId = studentId
   if (staffId) where.staffId = staffId
   if (status && (statusValues as readonly string[]).includes(status)) {
@@ -44,13 +46,7 @@ export async function list(req: Request, res: Response): Promise<void> {
   if (search) where.title = { contains: search, mode: 'insensitive' }
 
   const [appointments, total] = await Promise.all([
-    prisma.appointment.findMany({
-      where,
-      skip,
-      take,
-      include,
-      orderBy: { scheduledAt: 'desc' },
-    }),
+    prisma.appointment.findMany({ where, skip, take, include, orderBy: { scheduledAt: 'desc' } }),
     prisma.appointment.count({ where }),
   ])
 
@@ -59,9 +55,15 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getOne(req: Request, res: Response): Promise<void> {
   const id = req.params.id as string
+  const isAdmin = req.user?.role === 'ADMIN'
 
   const appointment = await prisma.appointment.findUnique({ where: { id }, include })
   if (!appointment) {
+    res.status(404).json({ message: 'Appointment not found' })
+    return
+  }
+
+  if (!isAdmin && appointment.approvalStatus !== 'APPROVED') {
     res.status(404).json({ message: 'Appointment not found' })
     return
   }
@@ -76,8 +78,16 @@ export async function create(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const appointment = await prisma.appointment.create({ data: parsed.data, include })
-  res.status(201).json({ appointment })
+  const isAdmin = req.user!.role === 'ADMIN'
+  const appointment = await prisma.appointment.create({
+    data: {
+      ...parsed.data,
+      approvalStatus: isAdmin ? 'APPROVED' : 'PENDING',
+      submittedById: isAdmin ? null : req.user!.id,
+    },
+    include,
+  })
+  res.status(201).json({ appointment, pending: !isAdmin })
 }
 
 export async function update(req: Request, res: Response): Promise<void> {

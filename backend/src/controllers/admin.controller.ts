@@ -88,3 +88,96 @@ export async function updateSettings(req: Request, res: Response): Promise<void>
 
   res.json({ settings })
 }
+
+export async function getPendingRecords(_req: Request, res: Response): Promise<void> {
+  const [students, medicalRecords, appointments] = await Promise.all([
+    prisma.student.findMany({ where: { approvalStatus: 'PENDING' }, orderBy: { createdAt: 'asc' } }),
+    prisma.medicalRecord.findMany({
+      where: { approvalStatus: 'PENDING' },
+      include: {
+        student: { select: { id: true, firstName: true, lastName: true, studentId: true } },
+        doctor: { select: { id: true, firstName: true, lastName: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+    prisma.appointment.findMany({
+      where: { approvalStatus: 'PENDING' },
+      include: {
+        student: { select: { id: true, firstName: true, lastName: true, studentId: true } },
+        staff: { select: { id: true, firstName: true, lastName: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+  ])
+
+  const submitterIds = [
+    ...students.map((s) => s.submittedById),
+    ...medicalRecords.map((r) => r.submittedById),
+    ...appointments.map((a) => a.submittedById),
+  ].filter((id): id is string => id !== null)
+
+  const uniqueIds = [...new Set(submitterIds)]
+  const submitters =
+    uniqueIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: uniqueIds } },
+          select: { id: true, firstName: true, lastName: true, email: true, role: true },
+        })
+      : []
+  const submitterMap = Object.fromEntries(submitters.map((u) => [u.id, u]))
+
+  res.json({
+    students: students.map((s) => ({
+      ...s,
+      submittedBy: s.submittedById ? (submitterMap[s.submittedById] ?? null) : null,
+    })),
+    medicalRecords: medicalRecords.map((r) => ({
+      ...r,
+      submittedBy: r.submittedById ? (submitterMap[r.submittedById] ?? null) : null,
+    })),
+    appointments: appointments.map((a) => ({
+      ...a,
+      submittedBy: a.submittedById ? (submitterMap[a.submittedById] ?? null) : null,
+    })),
+  })
+}
+
+export async function approveRecord(req: Request, res: Response): Promise<void> {
+  const { type, id } = req.params as { type: string; id: string }
+
+  if (type === 'students') {
+    const existing = await prisma.student.findUnique({ where: { id } })
+    if (!existing) { res.status(404).json({ message: 'Not found' }); return }
+    await prisma.student.update({ where: { id }, data: { approvalStatus: 'APPROVED' } })
+  } else if (type === 'medical') {
+    const existing = await prisma.medicalRecord.findUnique({ where: { id } })
+    if (!existing) { res.status(404).json({ message: 'Not found' }); return }
+    await prisma.medicalRecord.update({ where: { id }, data: { approvalStatus: 'APPROVED' } })
+  } else if (type === 'appointments') {
+    const existing = await prisma.appointment.findUnique({ where: { id } })
+    if (!existing) { res.status(404).json({ message: 'Not found' }); return }
+    await prisma.appointment.update({ where: { id }, data: { approvalStatus: 'APPROVED' } })
+  } else {
+    res.status(400).json({ message: 'Invalid record type' })
+    return
+  }
+
+  res.json({ message: 'Approved' })
+}
+
+export async function rejectRecord(req: Request, res: Response): Promise<void> {
+  const { type, id } = req.params as { type: string; id: string }
+
+  if (type === 'students') {
+    await prisma.student.deleteMany({ where: { id, approvalStatus: 'PENDING' } })
+  } else if (type === 'medical') {
+    await prisma.medicalRecord.deleteMany({ where: { id, approvalStatus: 'PENDING' } })
+  } else if (type === 'appointments') {
+    await prisma.appointment.deleteMany({ where: { id, approvalStatus: 'PENDING' } })
+  } else {
+    res.status(400).json({ message: 'Invalid record type' })
+    return
+  }
+
+  res.status(204).send()
+}
