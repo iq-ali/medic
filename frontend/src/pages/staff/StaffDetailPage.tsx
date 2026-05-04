@@ -91,30 +91,35 @@ export function StaffDetailPage() {
             )}
           </div>
         </div>
-        {user?.role === 'ADMIN' && staff.user?.role !== 'ADMIN' && (
-          <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" variant="outline" onClick={() => navigate(`/staff/${id}/edit`)}>
-              <Pencil />
-              Edit
-            </Button>
-            {!confirming ? (
-              <Button size="sm" variant="destructive" onClick={() => setConfirming(true)}>
-                <Trash2 />
-                Remove
+        {(() => {
+          const isAdmin = user?.role === 'ADMIN'
+          const isAdminRecord = staff.user?.role === 'ADMIN'
+          if (!isAdmin || isAdminRecord) return null
+          return (
+            <div className="flex items-center gap-2 shrink-0">
+              <Button size="sm" variant="outline" onClick={() => navigate(`/staff/${id}/edit`)}>
+                <Pencil />
+                Edit
               </Button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sure?</span>
-                <Button size="sm" variant="destructive" disabled={removing} onClick={handleRemove}>
-                  {removing ? 'Removing…' : 'Yes, remove'}
+              {!confirming ? (
+                <Button size="sm" variant="destructive" onClick={() => setConfirming(true)}>
+                  <Trash2 />
+                  Remove
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
-                  Cancel
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Sure?</span>
+                  <Button size="sm" variant="destructive" disabled={removing} onClick={handleRemove}>
+                    {removing ? 'Removing…' : 'Yes, remove'}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+          )
+        })()}
       </div>
 
       <motion.div variants={sectionVariants} className="rounded-xl border border-border px-4 sm:px-5">
