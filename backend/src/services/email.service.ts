@@ -1,10 +1,16 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-function getResend() {
-  return new Resend(process.env.RESEND_API_KEY)
+function getTransporter() {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  })
 }
 
-const FROM = 'EduPal <onboarding@resend.dev>'
+const FROM = `EduPal <${process.env.GMAIL_USER}>`
 
 function emailWrapper(content: string): string {
   return `
@@ -64,12 +70,7 @@ export async function sendWelcomeEmail(
     </a>
   `)
 
-  await getResend().emails.send({
-    from: FROM,
-    to,
-    subject: 'Welcome to EduPal — Account Pending Approval',
-    html,
-  })
+  await getTransporter().sendMail({ from: FROM, to, subject: 'Welcome to EduPal — Account Pending Approval', html })
 }
 
 export async function sendApprovalEmail(
@@ -94,10 +95,5 @@ export async function sendApprovalEmail(
     </a>
   `)
 
-  await getResend().emails.send({
-    from: FROM,
-    to,
-    subject: 'EduPal — Your Account Has Been Approved',
-    html,
-  })
+  await getTransporter().sendMail({ from: FROM, to, subject: 'EduPal — Your Account Has Been Approved', html })
 }
