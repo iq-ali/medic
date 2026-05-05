@@ -68,12 +68,7 @@ export function LoginPage() {
 
       const { token, user } = result
       setAuth(user, token)
-
-      if (user.mustChangePassword) {
-        navigate('/change-password')
-      } else {
-        navigate('/dashboard')
-      }
+      navigate('/dashboard')
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Login failed')
     }
@@ -85,11 +80,7 @@ export function LoginPage() {
     try {
       const { token, user } = await authService.completeTwoFA({ twoFAToken, code: data.code })
       setAuth(user, token)
-      if (user.mustChangePassword) {
-        navigate('/change-password')
-      } else {
-        navigate('/dashboard')
-      }
+      navigate('/dashboard')
     } catch (err) {
       setTwoFAError(err instanceof Error ? err.message : 'Invalid code')
     }

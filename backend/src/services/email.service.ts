@@ -38,62 +38,45 @@ function emailWrapper(content: string): string {
 
 export async function sendWelcomeEmail(
   to: string,
-  data: { firstName: string; orgEmail: string; defaultPassword: string; appUrl: string }
+  data: { firstName: string; appUrl: string }
 ): Promise<void> {
-  const { firstName, orgEmail, defaultPassword, appUrl } = data
+  const { firstName, appUrl } = data
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;color:#111827;font-size:20px;font-weight:600;">
       Welcome to EduPal, ${firstName}!
     </h2>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6;">
-      Your account has been created and is <strong style="color:#d97706;">pending administrator approval</strong>.
-      You will receive another email once approved.
-    </p>
-    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px;">
-      <p style="margin:0 0 12px;color:#374151;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Your login credentials</p>
-      <table style="width:100%;border-collapse:collapse;">
-        <tr>
-          <td style="padding:6px 0;color:#6b7280;font-size:14px;width:110px;">Login email</td>
-          <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:500;">${orgEmail}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Password</td>
-          <td style="padding:6px 0;color:#111827;font-size:14px;font-weight:500;font-family:monospace;">${defaultPassword}</td>
-        </tr>
-      </table>
-    </div>
-    <p style="margin:0 0 20px;color:#6b7280;font-size:14px;line-height:1.6;">
-      Keep these safe. You will be asked to change your password on first login.
+      Your account request has been received and is <strong style="color:#d97706;">pending administrator approval</strong>.
+      You will receive an email with a link to set up your account once approved.
     </p>
     <a href="${appUrl}/login" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
       Go to EduPal
     </a>
   `)
 
-  await getTransporter().sendMail({ from: FROM, to, subject: 'Welcome to EduPal — Account Pending Approval', html })
+  await getTransporter().sendMail({ from: FROM, to, subject: 'Welcome to EduPal — Request Received', html })
 }
 
-export async function sendApprovalEmail(
+export async function sendSetupEmail(
   to: string,
-  data: { firstName: string; orgEmail: string; appUrl: string }
+  data: { firstName: string; setupUrl: string }
 ): Promise<void> {
-  const { firstName, orgEmail, appUrl } = data
+  const { firstName, setupUrl } = data
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;color:#111827;font-size:20px;font-weight:600;">
       Your account has been approved!
     </h2>
     <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6;">
-      Hi ${firstName}, great news! Your EduPal account has been
-      <strong style="color:#059669;">approved</strong>. You can now sign in.
+      Hi ${firstName}, your EduPal account has been <strong style="color:#059669;">approved</strong>.
+      Click the button below to set your password and get started. This link expires in 48 hours.
     </p>
-    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px;">
-      <p style="margin:0 0 8px;color:#374151;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Your login email</p>
-      <p style="margin:0;color:#111827;font-size:15px;font-weight:500;">${orgEmail}</p>
-    </div>
-    <a href="${appUrl}/login" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
-      Sign in to EduPal
+    <a href="${setupUrl}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
+      Set up my account
     </a>
+    <p style="margin:20px 0 0;color:#9ca3af;font-size:13px;">
+      Or copy this link: ${setupUrl}
+    </p>
   `)
 
-  await getTransporter().sendMail({ from: FROM, to, subject: 'EduPal — Your Account Has Been Approved', html })
+  await getTransporter().sendMail({ from: FROM, to, subject: 'EduPal — Set Up Your Account', html })
 }

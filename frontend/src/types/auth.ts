@@ -4,7 +4,6 @@ export interface AuthUser {
   id: string
   email: string
   role: Role
-  mustChangePassword: boolean
   twoFAEnabled: boolean
   firstName?: string
   lastName?: string
@@ -29,14 +28,13 @@ export interface SignupRequest {
   firstName: string
   lastName: string
   role: Exclude<Role, 'ADMIN'>
-  personalEmail: string
+  email: string
   specialty?: string
   phone?: string
 }
 
 export interface SignupResponse {
   message: string
-  orgEmail: string
   autoApproved: boolean
 }
 
@@ -58,7 +56,6 @@ export interface CompleteTwoFARequest {
 export interface PendingUser {
   id: string
   email: string
-  personalEmail: string | null
   firstName: string | null
   lastName: string | null
   role: Role

@@ -46,16 +46,16 @@ enum DisabilityType {
 model User {
   id                String     @id @default(cuid())
   email             String     @unique
-  password          String
+  password          String?
   role              Role
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
-  personalEmail     String?
   firstName         String?
   lastName          String?
   status            UserStatus @default(APPROVED)
-  mustChangePassword Boolean   @default(false)
+  inviteToken       String?
+  inviteTokenExpiry DateTime?
   twoFASecret       String?
   twoFAEnabled      Boolean    @default(false)
 

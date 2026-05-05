@@ -7,7 +7,6 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/services/auth.service'
-import { useAuthStore } from '@/store/auth'
 
 const schema = z
   .object({
@@ -24,11 +23,7 @@ type FormData = z.infer<typeof schema>
 
 export function ChangePasswordPage() {
   const navigate = useNavigate()
-  const user = useAuthStore((s) => s.user)
-  const updateUser = useAuthStore((s) => s.updateUser)
   const [serverError, setServerError] = useState<string | null>(null)
-
-  const isMustChange = user?.mustChangePassword ?? false
 
   const {
     register,
@@ -43,7 +38,6 @@ export function ChangePasswordPage() {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       })
-      updateUser({ mustChangePassword: false })
       navigate('/dashboard')
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Failed to change password')
@@ -59,78 +53,41 @@ export function ChangePasswordPage() {
         className="w-full max-w-sm space-y-8 px-4"
       >
         <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {isMustChange ? 'Set your password' : 'Change password'}
-          </h1>
-          {isMustChange && (
-            <p className="text-sm text-muted-foreground">
-              You must set a new password before continuing.
-            </p>
-          )}
+          <h1 className="text-2xl font-bold tracking-tight">Change password</h1>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="currentPassword" className="text-sm font-medium">
-              {isMustChange ? 'Temporary password' : 'Current password'}
-            </label>
-            <Input
-              id="currentPassword"
-              type="password"
-              placeholder="••••••••"
-              aria-invalid={!!errors.currentPassword}
-              {...register('currentPassword')}
-            />
-            {errors.currentPassword && (
-              <p className="text-xs text-destructive">{errors.currentPassword.message}</p>
-            )}
+            <label htmlFor="currentPassword" className="text-sm font-medium">Current password</label>
+            <Input id="currentPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.currentPassword} {...register('currentPassword')} />
+            {errors.currentPassword && <p className="text-xs text-destructive">{errors.currentPassword.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="newPassword" className="text-sm font-medium">New password</label>
-            <Input
-              id="newPassword"
-              type="password"
-              placeholder="••••••••"
-              aria-invalid={!!errors.newPassword}
-              {...register('newPassword')}
-            />
-            {errors.newPassword && (
-              <p className="text-xs text-destructive">{errors.newPassword.message}</p>
-            )}
+            <Input id="newPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.newPassword} {...register('newPassword')} />
+            {errors.newPassword && <p className="text-xs text-destructive">{errors.newPassword.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm new password</label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              aria-invalid={!!errors.confirmPassword}
-              {...register('confirmPassword')}
-            />
-            {errors.confirmPassword && (
-              <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
-            )}
+            <Input id="confirmPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
+            {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
           </div>
 
-          {serverError && (
-            <p className="text-sm text-destructive text-center">{serverError}</p>
-          )}
+          {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
 
           <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
             {isSubmitting ? 'Updating…' : 'Update password'}
           </Button>
 
-          {!isMustChange && (
-            <button
-              type="button"
-              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => navigate(-1)}
-            >
-              Cancel
-            </button>
-          )}
+          <button
+            type="button"
+            className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => navigate(-1)}
+          >
+            Cancel
+          </button>
         </form>
       </motion.div>
     </div>

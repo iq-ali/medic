@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   signup,
+  setupAccount,
   login,
   me,
   completeTwoFA,
@@ -16,6 +17,7 @@ import { authenticate } from '../middleware/auth.js'
 const router = Router()
 
 router.post('/signup', signup)
+router.post('/setup-account', setupAccount)
 router.post('/login', login)
 router.get('/me', authenticate, me)
 router.post('/2fa/complete', completeTwoFA)

@@ -16,12 +16,7 @@ import type { Setup2FAResponse } from '@/types/auth'
 const profileSchema = z.object({
   firstName: z.string().min(1, 'Required'),
   lastName: z.string().min(1, 'Required'),
-  email: z
-    .string()
-    .email('Valid email required')
-    .refine((e) => e.toLowerCase().endsWith('edupal.org'), {
-      message: 'Email must use the @edupal.org domain',
-    }),
+  email: z.string().email('Valid email required'),
 })
 
 const pwSchema = z
@@ -121,7 +116,6 @@ export function ProfilePage() {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       })
-      updateUser({ mustChangePassword: false })
       setPwSuccess(true)
       pwForm.reset()
     } catch (err) {

@@ -39,4 +39,7 @@ export const authService = {
 
   verifyPassword: (password: string) =>
     api.post<{ verified: true }>('/auth/verify-password', { password }),
+
+  setupAccount: (token: string, password: string) =>
+    api.post<{ message: string }>('/auth/setup-account', { token, password }),
 }

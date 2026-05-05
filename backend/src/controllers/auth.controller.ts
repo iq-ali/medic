@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { generateSecret, verifySync as otpVerifySync, generateURI } from 'otplib'
 import qrcode from 'qrcode'
 import { prisma } from '../prisma.js'
-import { sendWelcomeEmail, sendApprovalEmail } from '../services/email.service.js'
+import { sendWelcomeEmail } from '../services/email.service.js'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -16,28 +16,14 @@ function signToken(
   return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn } as jwt.SignOptions)
 }
 
-function randomPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-  let out = 'Edu'
-  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)]
-  return out
-}
-
-function sanitizeName(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '')
-}
-
-async function generateOrgEmail(firstName: string, lastName: string, role: string): Promise<string> {
-  const base = `${sanitizeName(firstName)}.${sanitizeName(lastName)}@${role.toLowerCase()}.edupal.org`
-  const existing = await prisma.user.findUnique({ where: { email: base } })
-  if (!existing) return base
-
-  let counter = 2
-  while (true) {
-    const candidate = `${sanitizeName(firstName)}.${sanitizeName(lastName)}${counter}@${role.toLowerCase()}.edupal.org`
-    const exists = await prisma.user.findUnique({ where: { email: candidate } })
-    if (!exists) return candidate
-    counter++
+function userPayload(user: { id: string; email: string; role: string; firstName: string | null; lastName: string | null; twoFAEnabled: boolean }) {
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    twoFAEnabled: user.twoFAEnabled,
   }
 }
 
@@ -52,9 +38,14 @@ const signupSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   role: z.enum(['DOCTOR', 'THERAPIST', 'TEACHER', 'PARENT', 'STUDENT']),
-  personalEmail: z.string().email(),
+  email: z.string().email(),
   specialty: z.string().optional(),
   phone: z.string().optional(),
+})
+
+const setupAccountSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
 const changePasswordSchema = z.object({
@@ -78,12 +69,7 @@ const disable2FASchema = z.object({
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name required'),
   lastName: z.string().min(1, 'Last name required'),
-  email: z
-    .string()
-    .email('Valid email required')
-    .refine((e) => e.toLowerCase().endsWith('edupal.org'), {
-      message: 'Email must use the @edupal.org domain',
-    }),
+  email: z.string().email('Valid email required'),
   password: z.string().min(1, 'Password is required to confirm changes'),
 })
 
@@ -96,17 +82,16 @@ export async function signup(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const { firstName, lastName, role, personalEmail, specialty, phone } = parsed.data
+  const { firstName, lastName, role, email, specialty, phone } = parsed.data
 
-  const orgEmail = await generateOrgEmail(firstName, lastName, role)
-  const defaultPassword = randomPassword()
-  const hashed = await bcrypt.hash(defaultPassword, 10)
-
-  // Check auto-approval setting
-  let settings = await prisma.adminSettings.findFirst()
-  if (!settings) {
-    settings = await prisma.adminSettings.create({ data: {} })
+  const existing = await prisma.user.findUnique({ where: { email } })
+  if (existing) {
+    res.status(409).json({ message: 'An account with this email already exists' })
+    return
   }
+
+  let settings = await prisma.adminSettings.findFirst()
+  if (!settings) settings = await prisma.adminSettings.create({ data: {} })
   const autoApproved = settings.autoApproval
 
   const staffRoles = ['DOCTOR', 'THERAPIST', 'TEACHER'] as const
@@ -114,14 +99,12 @@ export async function signup(req: Request, res: Response): Promise<void> {
 
   await prisma.user.create({
     data: {
-      email: orgEmail,
-      password: hashed,
+      email,
+      password: null,
       role,
-      personalEmail,
       firstName,
       lastName,
       status: autoApproved ? 'APPROVED' : 'PENDING',
-      mustChangePassword: true,
       ...(needsStaff
         ? {
             staff: {
@@ -139,26 +122,37 @@ export async function signup(req: Request, res: Response): Promise<void> {
 
   const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:5173'
 
-  // Send emails — don't let failures break the flow
   try {
-    await sendWelcomeEmail(personalEmail, { firstName, orgEmail, defaultPassword, appUrl })
+    await sendWelcomeEmail(email, { firstName, appUrl })
   } catch (err) {
     console.error('Failed to send welcome email:', err)
   }
 
-  if (autoApproved) {
-    try {
-      await sendApprovalEmail(personalEmail, { firstName, orgEmail, appUrl })
-    } catch (err) {
-      console.error('Failed to send approval email:', err)
-    }
+  res.status(201).json({ message: 'Account request submitted', autoApproved })
+}
+
+export async function setupAccount(req: Request, res: Response): Promise<void> {
+  const parsed = setupAccountSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Invalid request' })
+    return
   }
 
-  res.status(201).json({
-    message: 'Account created',
-    orgEmail,
-    autoApproved,
+  const { token, password } = parsed.data
+
+  const user = await prisma.user.findFirst({ where: { inviteToken: token } })
+  if (!user || !user.inviteTokenExpiry || user.inviteTokenExpiry < new Date()) {
+    res.status(400).json({ message: 'Invalid or expired setup link' })
+    return
+  }
+
+  const hashed = await bcrypt.hash(password, 10)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { password: hashed, inviteToken: null, inviteTokenExpiry: null },
   })
+
+  res.json({ message: 'Account set up — you can now sign in' })
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
@@ -176,9 +170,13 @@ export async function login(req: Request, res: Response): Promise<void> {
     return
   }
 
-  // Check status
   if (user.status === 'PENDING') {
     res.status(401).json({ message: 'Your account is pending administrator approval' })
+    return
+  }
+
+  if (!user.password) {
+    res.status(401).json({ message: 'Account setup incomplete — check your email for a setup link' })
     return
   }
 
@@ -188,32 +186,14 @@ export async function login(req: Request, res: Response): Promise<void> {
     return
   }
 
-  // 2FA flow
   if (user.twoFAEnabled && user.twoFASecret) {
     const twoFAToken = signToken({ id: user.id, type: '2fa' }, '15m')
     res.json({ requires2FA: true, twoFAToken })
     return
   }
 
-  const token = signToken({
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    mustChangePassword: user.mustChangePassword,
-  })
-
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      mustChangePassword: user.mustChangePassword,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      twoFAEnabled: user.twoFAEnabled,
-    },
-  })
+  const token = signToken({ id: user.id, email: user.email, role: user.role })
+  res.json({ token, user: userPayload(user) })
 }
 
 export async function completeTwoFA(req: Request, res: Response): Promise<void> {
@@ -250,25 +230,8 @@ export async function completeTwoFA(req: Request, res: Response): Promise<void> 
     return
   }
 
-  const token = signToken({
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    mustChangePassword: user.mustChangePassword,
-  })
-
-  res.json({
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      mustChangePassword: user.mustChangePassword,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      twoFAEnabled: user.twoFAEnabled,
-    },
-  })
+  const token = signToken({ id: user.id, email: user.email, role: user.role })
+  res.json({ token, user: userPayload(user) })
 }
 
 export async function me(req: Request, res: Response): Promise<void> {
@@ -277,17 +240,7 @@ export async function me(req: Request, res: Response): Promise<void> {
     res.status(404).json({ message: 'User not found' })
     return
   }
-  res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      mustChangePassword: user.mustChangePassword,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      twoFAEnabled: user.twoFAEnabled,
-    },
-  })
+  res.json({ user: userPayload(user) })
 }
 
 export async function changePassword(req: Request, res: Response): Promise<void> {
@@ -298,10 +251,8 @@ export async function changePassword(req: Request, res: Response): Promise<void>
   }
 
   const { currentPassword, newPassword } = parsed.data
-  const userId = req.user!.id
-
-  const user = await prisma.user.findUnique({ where: { id: userId } })
-  if (!user) {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
+  if (!user || !user.password) {
     res.status(404).json({ message: 'User not found' })
     return
   }
@@ -313,17 +264,13 @@ export async function changePassword(req: Request, res: Response): Promise<void>
   }
 
   const hashed = await bcrypt.hash(newPassword, 10)
-  await prisma.user.update({
-    where: { id: userId },
-    data: { password: hashed, mustChangePassword: false },
-  })
+  await prisma.user.update({ where: { id: user.id }, data: { password: hashed } })
 
   res.json({ message: 'Password changed' })
 }
 
 export async function setup2FA(req: Request, res: Response): Promise<void> {
-  const userId = req.user!.id
-  const user = await prisma.user.findUnique({ where: { id: userId } })
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
   if (!user) {
     res.status(404).json({ message: 'User not found' })
     return
@@ -333,7 +280,7 @@ export async function setup2FA(req: Request, res: Response): Promise<void> {
   const otpauthUrl = generateURI({ label: `EduPal:${user.email}`, secret, issuer: 'EduPal' })
   const qrCode = await qrcode.toDataURL(otpauthUrl)
 
-  await prisma.user.update({ where: { id: userId }, data: { twoFASecret: secret } })
+  await prisma.user.update({ where: { id: user.id }, data: { twoFASecret: secret } })
 
   res.json({ secret, qrCode })
 }
@@ -345,8 +292,7 @@ export async function verify2FA(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const userId = req.user!.id
-  const user = await prisma.user.findUnique({ where: { id: userId } })
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
   if (!user || !user.twoFASecret) {
     res.status(400).json({ message: '2FA setup not initiated' })
     return
@@ -358,7 +304,7 @@ export async function verify2FA(req: Request, res: Response): Promise<void> {
     return
   }
 
-  await prisma.user.update({ where: { id: userId }, data: { twoFAEnabled: true } })
+  await prisma.user.update({ where: { id: user.id }, data: { twoFAEnabled: true } })
 
   res.json({ message: '2FA enabled' })
 }
@@ -370,9 +316,8 @@ export async function disable2FA(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const userId = req.user!.id
-  const user = await prisma.user.findUnique({ where: { id: userId } })
-  if (!user) {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
+  if (!user || !user.password) {
     res.status(404).json({ message: 'User not found' })
     return
   }
@@ -384,7 +329,7 @@ export async function disable2FA(req: Request, res: Response): Promise<void> {
   }
 
   await prisma.user.update({
-    where: { id: userId },
+    where: { id: user.id },
     data: { twoFAEnabled: false, twoFASecret: null },
   })
 
@@ -407,7 +352,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
   const userId = req.user!.id
 
   const existing = await prisma.user.findUnique({ where: { id: userId } })
-  if (!existing) {
+  if (!existing || !existing.password) {
     res.status(404).json({ message: 'User not found' })
     return
   }
@@ -424,22 +369,9 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     return
   }
 
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { firstName, lastName, email },
-  })
+  const user = await prisma.user.update({ where: { id: userId }, data: { firstName, lastName, email } })
 
-  res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      mustChangePassword: user.mustChangePassword,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      twoFAEnabled: user.twoFAEnabled,
-    },
-  })
+  res.json({ user: userPayload(user) })
 }
 
 export async function verifyPassword(req: Request, res: Response): Promise<void> {
@@ -449,7 +381,7 @@ export async function verifyPassword(req: Request, res: Response): Promise<void>
     return
   }
   const user = await prisma.user.findUnique({ where: { id: req.user!.id } })
-  if (!user) {
+  if (!user || !user.password) {
     res.status(404).json({ message: 'User not found' })
     return
   }

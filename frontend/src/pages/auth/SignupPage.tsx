@@ -14,39 +14,27 @@ const schema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   role: z.enum(ROLES, { error: 'Please select a role' }),
-  personalEmail: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
 
-function previewOrgEmail(firstName: string, lastName: string, role: string) {
-  const f = firstName.toLowerCase().replace(/[^a-z0-9]/g, '')
-  const l = lastName.toLowerCase().replace(/[^a-z0-9]/g, '')
-  const r = role.toLowerCase()
-  if (!f || !l || !r) return ''
-  return `${f}.${l}@${r}.edupal.org`
-}
-
 export function SignupPage() {
-  const [success, setSuccess] = useState<{ orgEmail: string; autoApproved: boolean } | null>(null)
+  const [success, setSuccess] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
-
-  const [firstName, lastName, role] = watch(['firstName', 'lastName', 'role'])
-  const preview = previewOrgEmail(firstName ?? '', lastName ?? '', role ?? '')
 
   async function onSubmit(data: FormData) {
     setServerError(null)
     try {
-      const result = await authService.signup(data)
-      setSuccess({ orgEmail: result.orgEmail, autoApproved: result.autoApproved })
+      await authService.signup(data)
+      setSuccess(true)
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Signup failed')
     }
@@ -67,16 +55,8 @@ export function SignupPage() {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold">Request submitted</h1>
             <p className="text-sm text-muted-foreground">
-              {success.autoApproved
-                ? 'Your account has been approved. Check your personal email for login credentials.'
-                : 'Your account is pending admin approval. You will receive an email once approved.'}
+              Your account is pending admin approval. Once approved, you'll receive an email with a link to set up your password.
             </p>
-          </div>
-          <div className="rounded-lg border border-border bg-muted/40 p-4 text-left space-y-1">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-              Your organisation email
-            </p>
-            <p className="text-sm font-mono text-foreground break-all">{success.orgEmail}</p>
           </div>
           <Link to="/login" className="inline-block text-sm font-medium text-foreground hover:underline">
             Back to sign in
@@ -103,27 +83,13 @@ export function SignupPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label htmlFor="firstName" className="text-sm font-medium">First name</label>
-              <Input
-                id="firstName"
-                placeholder="Jane"
-                aria-invalid={!!errors.firstName}
-                {...register('firstName')}
-              />
-              {errors.firstName && (
-                <p className="text-xs text-destructive">{errors.firstName.message}</p>
-              )}
+              <Input id="firstName" placeholder="Jane" aria-invalid={!!errors.firstName} {...register('firstName')} />
+              {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-1.5">
               <label htmlFor="lastName" className="text-sm font-medium">Last name</label>
-              <Input
-                id="lastName"
-                placeholder="Smith"
-                aria-invalid={!!errors.lastName}
-                {...register('lastName')}
-              />
-              {errors.lastName && (
-                <p className="text-xs text-destructive">{errors.lastName.message}</p>
-              )}
+              <Input id="lastName" placeholder="Smith" aria-invalid={!!errors.lastName} {...register('lastName')} />
+              {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
             </div>
           </div>
 
@@ -136,53 +102,26 @@ export function SignupPage() {
             >
               <option value="">Select a role…</option>
               {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r.charAt(0) + r.slice(1).toLowerCase()}
-                </option>
+                <option key={r} value={r}>{r.charAt(0) + r.slice(1).toLowerCase()}</option>
               ))}
             </select>
-            {errors.role && (
-              <p className="text-xs text-destructive">{errors.role.message}</p>
-            )}
+            {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="personalEmail" className="text-sm font-medium">Personal email</label>
-            <Input
-              id="personalEmail"
-              type="email"
-              placeholder="you@example.com"
-              aria-invalid={!!errors.personalEmail}
-              {...register('personalEmail')}
-            />
-            {errors.personalEmail && (
-              <p className="text-xs text-destructive">{errors.personalEmail.message}</p>
-            )}
+            <label htmlFor="email" className="text-sm font-medium">Email</label>
+            <Input id="email" type="email" placeholder="you@example.com" aria-invalid={!!errors.email} {...register('email')} />
+            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="phone" className="text-sm font-medium">
-              Phone{' '}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              Phone <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+1 555 000 0000"
-              {...register('phone')}
-            />
+            <Input id="phone" type="tel" placeholder="+1 555 000 0000" {...register('phone')} />
           </div>
 
-          {preview && (
-            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-0.5">
-              <p className="text-xs text-muted-foreground">Your organisation email will be</p>
-              <p className="text-sm font-mono text-foreground break-all">{preview}</p>
-            </div>
-          )}
-
-          {serverError && (
-            <p className="text-sm text-destructive text-center">{serverError}</p>
-          )}
+          {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
 
           <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
             {isSubmitting ? 'Submitting…' : 'Request account'}
@@ -191,9 +130,7 @@ export function SignupPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-foreground hover:underline">
-            Sign in
-          </Link>
+          <Link to="/login" className="font-medium text-foreground hover:underline">Sign in</Link>
         </p>
       </motion.div>
     </div>

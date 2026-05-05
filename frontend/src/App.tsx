@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from './pages/auth/LoginPage'
 import { SignupPage } from './pages/auth/SignupPage'
 import { ChangePasswordPage } from './pages/auth/ChangePasswordPage'
+import { SetupAccountPage } from './pages/auth/SetupAccountPage'
 import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
 import { SplashScreen } from './components/SplashScreen'
@@ -74,6 +75,7 @@ function App() {
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/setup-account" element={<SetupAccountPage />} />
 
         {/* Standalone protected — no AppShell */}
         <Route

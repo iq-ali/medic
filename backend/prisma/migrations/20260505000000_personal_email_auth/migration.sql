@@ -1,0 +1,5 @@
+ALTER TABLE "User" ALTER COLUMN "password" DROP NOT NULL;
+ALTER TABLE "User" DROP COLUMN IF EXISTS "personalEmail";
+ALTER TABLE "User" DROP COLUMN IF EXISTS "mustChangePassword";
+ALTER TABLE "User" ADD COLUMN "inviteToken" TEXT;
+ALTER TABLE "User" ADD COLUMN "inviteTokenExpiry" TIMESTAMP(3);
