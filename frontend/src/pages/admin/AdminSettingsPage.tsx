@@ -80,6 +80,7 @@ export function AdminSettingsPage() {
   }
 
   return (
+    <>
     <motion.div
       variants={sectionContainerVariants}
       initial="initial"
@@ -186,5 +187,6 @@ export function AdminSettingsPage() {
       </motion.div>
     </motion.div>
     {modal}
+    </>
   )
 }

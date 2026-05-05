@@ -12,7 +12,6 @@ async function main() {
   } else {
     const adminFirstName = process.env.ADMIN_FIRST_NAME ?? 'System'
     const adminLastName = process.env.ADMIN_LAST_NAME ?? 'Admin'
-    const adminPersonalEmail = process.env.ADMIN_PERSONAL_EMAIL ?? adminEmail
 
     const hashed = await bcrypt.hash(adminPassword, 10)
     await prisma.user.upsert({
@@ -24,9 +23,7 @@ async function main() {
         role: 'ADMIN',
         firstName: adminFirstName,
         lastName: adminLastName,
-        personalEmail: adminPersonalEmail,
         status: 'APPROVED',
-        mustChangePassword: false,
         staff: {
           create: {
             firstName: adminFirstName,
