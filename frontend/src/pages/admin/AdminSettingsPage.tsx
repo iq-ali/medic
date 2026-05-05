@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { UserCheck, UserX, ToggleLeft, ToggleRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { adminService } from '@/services/admin.service'
+import { usePasswordGate } from '@/hooks/usePasswordGate'
 import { sectionContainerVariants, sectionVariants } from '@/lib/animations'
 import type { PendingUser, AdminSettings } from '@/types/auth'
 
@@ -13,6 +14,7 @@ export function AdminSettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [togglingAutoApproval, setTogglingAutoApproval] = useState(false)
   const [actionIds, setActionIds] = useState<Set<string>>(new Set())
+  const { gateAction, modal } = usePasswordGate()
 
   useEffect(() => {
     async function load() {
@@ -159,7 +161,7 @@ export function AdminSettingsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleApprove(u.id)}
+                    onClick={gateAction(async () => handleApprove(u.id))}
                     disabled={actionIds.has(u.id)}
                     className="gap-1.5"
                   >
@@ -169,7 +171,7 @@ export function AdminSettingsPage() {
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleDelete(u.id)}
+                    onClick={gateAction(async () => handleDelete(u.id))}
                     disabled={actionIds.has(u.id)}
                     className="gap-1.5 text-destructive hover:text-destructive"
                   >
@@ -183,5 +185,6 @@ export function AdminSettingsPage() {
         )}
       </motion.div>
     </motion.div>
+    {modal}
   )
 }

@@ -5,7 +5,8 @@ import { z } from 'zod'
 import { generateSecret, verifySync as otpVerifySync, generateURI } from 'otplib'
 import qrcode from 'qrcode'
 import { prisma } from '../prisma.js'
-import { sendWelcomeEmail } from '../services/email.service.js'
+import crypto from 'crypto'
+import { sendWelcomeEmail, sendSetupEmail } from '../services/email.service.js'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -97,6 +98,9 @@ export async function signup(req: Request, res: Response): Promise<void> {
   const staffRoles = ['DOCTOR', 'THERAPIST', 'TEACHER'] as const
   const needsStaff = (staffRoles as readonly string[]).includes(role)
 
+  const inviteToken = autoApproved ? crypto.randomBytes(32).toString('hex') : null
+  const inviteTokenExpiry = autoApproved ? new Date(Date.now() + 48 * 60 * 60 * 1000) : null
+
   await prisma.user.create({
     data: {
       email,
@@ -105,6 +109,8 @@ export async function signup(req: Request, res: Response): Promise<void> {
       firstName,
       lastName,
       status: autoApproved ? 'APPROVED' : 'PENDING',
+      inviteToken,
+      inviteTokenExpiry,
       ...(needsStaff
         ? {
             staff: {
@@ -122,10 +128,18 @@ export async function signup(req: Request, res: Response): Promise<void> {
 
   const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:5173'
 
-  try {
-    await sendWelcomeEmail(email, { firstName, appUrl })
-  } catch (err) {
-    console.error('Failed to send welcome email:', err)
+  if (autoApproved && inviteToken) {
+    try {
+      await sendSetupEmail(email, { firstName, setupUrl: `${appUrl}/setup-account?token=${inviteToken}` })
+    } catch (err) {
+      console.error('Failed to send setup email:', err)
+    }
+  } else {
+    try {
+      await sendWelcomeEmail(email, { firstName, appUrl })
+    } catch (err) {
+      console.error('Failed to send welcome email:', err)
+    }
   }
 
   res.status(201).json({ message: 'Account request submitted', autoApproved })
