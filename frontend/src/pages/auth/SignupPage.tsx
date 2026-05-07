@@ -10,14 +10,35 @@ import { useState } from 'react'
 
 const ROLES = ['DOCTOR', 'THERAPIST', 'TEACHER', 'PARENT', 'STUDENT'] as const
 
+const NAME_RE = /^[\p{L}\s'.\-]+$/u
+const PHONE_RE = /^[+\d\s\-()\[\]]+$/
+
 const schema = z
   .object({
-    firstName: z.string().min(1, 'First name is required'),
-    lastName: z.string().min(1, 'Last name is required'),
+    firstName: z
+      .string()
+      .trim()
+      .min(1, 'First name is required')
+      .max(50, 'Too long')
+      .regex(NAME_RE, 'Letters, spaces, hyphens and apostrophes only'),
+    lastName: z
+      .string()
+      .trim()
+      .min(1, 'Last name is required')
+      .max(50, 'Too long')
+      .regex(NAME_RE, 'Letters, spaces, hyphens and apostrophes only'),
     role: z.enum(ROLES, { error: 'Please select a role' }),
-    email: z.string().email('Invalid email address'),
-    phone: z.string().optional(),
-    password: z.string().min(8, 'Must be at least 8 characters'),
+    email: z.string().trim().email('Enter a valid email address').max(254, 'Email is too long'),
+    phone: z
+      .string()
+      .trim()
+      .max(20, 'Too long')
+      .refine((val) => !val || PHONE_RE.test(val), 'Digits, spaces, +, -, ( ) only')
+      .optional(),
+    password: z
+      .string()
+      .min(8, 'Must be at least 8 characters')
+      .max(72, 'Too long'),
     confirmPassword: z.string().min(1, 'Required'),
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -35,7 +56,7 @@ export function SignupPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
+  } = useForm<FormData>({ resolver: zodResolver(schema), mode: 'onBlur' })
 
   async function onSubmit(data: FormData) {
     setServerError(null)
@@ -45,7 +66,7 @@ export function SignupPage() {
         lastName: data.lastName,
         role: data.role,
         email: data.email,
-        phone: data.phone,
+        phone: data.phone || undefined,
         password: data.password,
       })
       navigate('/login')
@@ -71,12 +92,24 @@ export function SignupPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label htmlFor="firstName" className="text-sm font-medium">First name</label>
-              <Input id="firstName" placeholder="Jane" aria-invalid={!!errors.firstName} {...register('firstName')} />
+              <Input
+                id="firstName"
+                placeholder="Jane"
+                autoComplete="given-name"
+                aria-invalid={!!errors.firstName}
+                {...register('firstName')}
+              />
               {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-1.5">
               <label htmlFor="lastName" className="text-sm font-medium">Last name</label>
-              <Input id="lastName" placeholder="Smith" aria-invalid={!!errors.lastName} {...register('lastName')} />
+              <Input
+                id="lastName"
+                placeholder="Smith"
+                autoComplete="family-name"
+                aria-invalid={!!errors.lastName}
+                {...register('lastName')}
+              />
               {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
             </div>
           </div>
@@ -98,7 +131,15 @@ export function SignupPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium">Email</label>
-            <Input id="email" type="email" placeholder="you@example.com" aria-invalid={!!errors.email} {...register('email')} />
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              autoComplete="email"
+              inputMode="email"
+              aria-invalid={!!errors.email}
+              {...register('email')}
+            />
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
 
@@ -106,18 +147,41 @@ export function SignupPage() {
             <label htmlFor="phone" className="text-sm font-medium">
               Phone <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
-            <Input id="phone" type="tel" placeholder="+1 555 000 0000" {...register('phone')} />
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="+1 555 000 0000"
+              autoComplete="tel"
+              inputMode="tel"
+              aria-invalid={!!errors.phone}
+              {...register('phone')}
+            />
+            {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium">Password</label>
-            <Input id="password" type="password" placeholder="••••••••" aria-invalid={!!errors.password} {...register('password')} />
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              aria-invalid={!!errors.password}
+              {...register('password')}
+            />
             {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm password</label>
-            <Input id="confirmPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              autoComplete="new-password"
+              aria-invalid={!!errors.confirmPassword}
+              {...register('confirmPassword')}
+            />
             {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
           </div>
 

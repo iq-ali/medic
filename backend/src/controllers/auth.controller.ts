@@ -28,49 +28,55 @@ function userPayload(user: { id: string; email: string; role: string; firstName:
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
+const NAME_RE = /^[\p{L}\s'.\-]+$/u
+const PHONE_RE = /^[+\d\s\-()\[\]]+$/
+
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
+  email: z.string().trim().email('Invalid email').max(254),
+  password: z.string().min(1).max(72),
 })
 
 const signupSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
+  firstName: z.string().trim().min(1, 'First name is required').max(50, 'Too long').regex(NAME_RE, 'Letters, spaces, hyphens and apostrophes only'),
+  lastName: z.string().trim().min(1, 'Last name is required').max(50, 'Too long').regex(NAME_RE, 'Letters, spaces, hyphens and apostrophes only'),
   role: z.enum(['DOCTOR', 'THERAPIST', 'TEACHER', 'PARENT', 'STUDENT']),
-  email: z.string().email(),
-  specialty: z.string().optional(),
-  phone: z.string().optional(),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z.string().trim().email('Invalid email').max(254),
+  specialty: z.string().trim().max(100, 'Too long').optional(),
+  phone: z.string().trim().max(20, 'Too long').optional().refine(
+    (val) => !val || PHONE_RE.test(val),
+    'Phone can only contain digits, spaces, +, -, (, )'
+  ),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password is too long'),
 })
 
 const setupAccountSchema = z.object({
-  token: z.string().min(1),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  token: z.string().min(1).max(128),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(72, 'Password is too long'),
 })
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+  currentPassword: z.string().min(1).max(72),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(72, 'Password is too long'),
 })
 
 const completeTwoFASchema = z.object({
-  twoFAToken: z.string().min(1),
-  code: z.string().min(1),
+  twoFAToken: z.string().min(1).max(512),
+  code: z.string().min(6).max(6).regex(/^\d{6}$/, 'Code must be 6 digits'),
 })
 
 const verify2FASchema = z.object({
-  code: z.string().min(1),
+  code: z.string().min(6).max(6).regex(/^\d{6}$/, 'Code must be 6 digits'),
 })
 
 const disable2FASchema = z.object({
-  password: z.string().min(1),
+  password: z.string().min(1).max(72),
 })
 
 const updateProfileSchema = z.object({
-  firstName: z.string().min(1, 'First name required'),
-  lastName: z.string().min(1, 'Last name required'),
-  email: z.string().email('Valid email required'),
-  password: z.string().min(1, 'Password is required to confirm changes'),
+  firstName: z.string().trim().min(1, 'First name required').max(50, 'Too long').regex(NAME_RE, 'Letters, spaces, hyphens and apostrophes only'),
+  lastName: z.string().trim().min(1, 'Last name required').max(50, 'Too long').regex(NAME_RE, 'Letters, spaces, hyphens and apostrophes only'),
+  email: z.string().trim().email('Valid email required').max(254),
+  password: z.string().min(1, 'Password is required to confirm changes').max(72),
 })
 
 // ─── Handlers ────────────────────────────────────────────────────────────────

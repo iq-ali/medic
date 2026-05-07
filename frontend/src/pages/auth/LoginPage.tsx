@@ -12,8 +12,8 @@ import { useAuthStore } from '@/store/auth'
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().trim().email('Enter a valid email address').max(254, 'Email is too long'),
+  password: z.string().min(1, 'Password is required').max(72, 'Password is too long'),
   agreed: z.literal(true, { message: 'You must agree to the Terms of Service' }),
 })
 
@@ -46,7 +46,7 @@ export function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     watch,
-  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) })
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema), mode: 'onBlur' })
 
   const {
     register: register2FA,
@@ -168,6 +168,8 @@ export function LoginPage() {
               id="email"
               type="email"
               placeholder="you@example.com"
+              autoComplete="email"
+              inputMode="email"
               aria-invalid={!!errors.email}
               {...register('email')}
             />
@@ -184,6 +186,7 @@ export function LoginPage() {
               id="password"
               type="password"
               placeholder="••••••••"
+              autoComplete="current-password"
               aria-invalid={!!errors.password}
               {...register('password')}
             />
