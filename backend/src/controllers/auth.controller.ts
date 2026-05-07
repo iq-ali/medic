@@ -171,7 +171,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   }
 
   if (!user.password) {
-    res.status(401).json({ message: 'Account setup incomplete — check your email for a setup link' })
+    res.status(401).json({ message: 'This account has no password. Please sign up again or contact an administrator.' })
     return
   }
 

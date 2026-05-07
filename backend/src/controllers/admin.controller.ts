@@ -1,7 +1,5 @@
-import crypto from 'crypto'
 import type { Request, Response } from 'express'
 import { prisma } from '../prisma.js'
-import { sendSetupEmail } from '../services/email.service.js'
 
 export async function getPendingUsers(_req: Request, res: Response): Promise<void> {
   const users = await prisma.user.findMany({
@@ -28,23 +26,10 @@ export async function approveUser(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const inviteToken = crypto.randomBytes(32).toString('hex')
-  const inviteTokenExpiry = new Date(Date.now() + 48 * 60 * 60 * 1000)
-
   await prisma.user.update({
     where: { id },
-    data: { status: 'APPROVED', inviteToken, inviteTokenExpiry },
+    data: { status: 'APPROVED' },
   })
-
-  if (user.firstName) {
-    const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:5173'
-    const setupUrl = `${appUrl}/setup-account?token=${inviteToken}`
-    try {
-      await sendSetupEmail(user.email, { firstName: user.firstName, setupUrl })
-    } catch (err) {
-      console.error('Failed to send setup email:', err)
-    }
-  }
 
   res.json({ message: 'User approved' })
 }
