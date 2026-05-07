@@ -5,8 +5,6 @@ import { z } from 'zod'
 import { generateSecret, verifySync as otpVerifySync, generateURI } from 'otplib'
 import qrcode from 'qrcode'
 import { prisma } from '../prisma.js'
-import crypto from 'crypto'
-import { sendWelcomeEmail, sendSetupEmail } from '../services/email.service.js'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -42,6 +40,7 @@ const signupSchema = z.object({
   email: z.string().email(),
   specialty: z.string().optional(),
   phone: z.string().optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
 const setupAccountSchema = z.object({
@@ -79,11 +78,11 @@ const updateProfileSchema = z.object({
 export async function signup(req: Request, res: Response): Promise<void> {
   const parsed = signupSchema.safeParse(req.body)
   if (!parsed.success) {
-    res.status(400).json({ message: 'Invalid request', errors: parsed.error.flatten() })
+    res.status(400).json({ message: parsed.error.issues[0]?.message ?? 'Invalid request' })
     return
   }
 
-  const { firstName, lastName, role, email, specialty, phone } = parsed.data
+  const { firstName, lastName, role, email, specialty, phone, password } = parsed.data
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {
@@ -91,26 +90,18 @@ export async function signup(req: Request, res: Response): Promise<void> {
     return
   }
 
-  let settings = await prisma.adminSettings.findFirst()
-  if (!settings) settings = await prisma.adminSettings.create({ data: {} })
-  const autoApproved = settings.autoApproval
-
+  const hashed = await bcrypt.hash(password, 10)
   const staffRoles = ['DOCTOR', 'THERAPIST', 'TEACHER'] as const
   const needsStaff = (staffRoles as readonly string[]).includes(role)
-
-  const inviteToken = autoApproved ? crypto.randomBytes(32).toString('hex') : null
-  const inviteTokenExpiry = autoApproved ? new Date(Date.now() + 48 * 60 * 60 * 1000) : null
 
   await prisma.user.create({
     data: {
       email,
-      password: null,
+      password: hashed,
       role,
       firstName,
       lastName,
-      status: autoApproved ? 'APPROVED' : 'PENDING',
-      inviteToken,
-      inviteTokenExpiry,
+      status: 'APPROVED',
       ...(needsStaff
         ? {
             staff: {
@@ -126,23 +117,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
     },
   })
 
-  const appUrl = process.env.FRONTEND_URL ?? process.env.APP_URL ?? 'http://localhost:5173'
-
-  if (autoApproved && inviteToken) {
-    try {
-      await sendSetupEmail(email, { firstName, setupUrl: `${appUrl}/setup-account?token=${inviteToken}` })
-    } catch (err) {
-      console.error('Failed to send setup email:', err)
-    }
-  } else {
-    try {
-      await sendWelcomeEmail(email, { firstName, appUrl })
-    } catch (err) {
-      console.error('Failed to send welcome email:', err)
-    }
-  }
-
-  res.status(201).json({ message: 'Account request submitted', autoApproved })
+  res.status(201).json({ message: 'Account created' })
 }
 
 export async function setupAccount(req: Request, res: Response): Promise<void> {

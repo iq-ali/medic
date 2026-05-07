@@ -162,12 +162,12 @@ export function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium">
-              Organisation email
+              Email
             </label>
             <Input
               id="email"
               type="email"
-              placeholder="firstname.lastname@role.edupal.org"
+              placeholder="you@example.com"
               aria-invalid={!!errors.email}
               {...register('email')}
             />

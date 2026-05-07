@@ -31,11 +31,11 @@ export interface SignupRequest {
   email: string
   specialty?: string
   phone?: string
+  password: string
 }
 
 export interface SignupResponse {
   message: string
-  autoApproved: boolean
 }
 
 export interface ChangePasswordRequest {

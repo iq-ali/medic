@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,21 +6,29 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { authService } from '@/services/auth.service'
+import { useState } from 'react'
 
 const ROLES = ['DOCTOR', 'THERAPIST', 'TEACHER', 'PARENT', 'STUDENT'] as const
 
-const schema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(ROLES, { error: 'Please select a role' }),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().optional(),
-})
+const schema = z
+  .object({
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    role: z.enum(ROLES, { error: 'Please select a role' }),
+    email: z.string().email('Invalid email address'),
+    phone: z.string().optional(),
+    password: z.string().min(8, 'Must be at least 8 characters'),
+    confirmPassword: z.string().min(1, 'Required'),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
 
 type FormData = z.infer<typeof schema>
 
 export function SignupPage() {
-  const [success, setSuccess] = useState(false)
+  const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -33,37 +40,18 @@ export function SignupPage() {
   async function onSubmit(data: FormData) {
     setServerError(null)
     try {
-      await authService.signup(data)
-      setSuccess(true)
+      await authService.signup({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+      })
+      navigate('/login')
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Signup failed')
     }
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="w-full max-w-sm space-y-6 px-4 text-center"
-        >
-          <div className="size-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-            <span className="text-2xl text-primary font-bold">✓</span>
-          </div>
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold">Request submitted</h1>
-            <p className="text-sm text-muted-foreground">
-              Your account is pending admin approval. Once approved, you'll receive an email with a link to set up your password.
-            </p>
-          </div>
-          <Link to="/login" className="inline-block text-sm font-medium text-foreground hover:underline">
-            Back to sign in
-          </Link>
-        </motion.div>
-      </div>
-    )
   }
 
   return (
@@ -121,10 +109,22 @@ export function SignupPage() {
             <Input id="phone" type="tel" placeholder="+1 555 000 0000" {...register('phone')} />
           </div>
 
+          <div className="space-y-1.5">
+            <label htmlFor="password" className="text-sm font-medium">Password</label>
+            <Input id="password" type="password" placeholder="••••••••" aria-invalid={!!errors.password} {...register('password')} />
+            {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm password</label>
+            <Input id="confirmPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
+            {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
+          </div>
+
           {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
 
           <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting…' : 'Request account'}
+            {isSubmitting ? 'Creating account…' : 'Create account'}
           </Button>
         </form>
 
