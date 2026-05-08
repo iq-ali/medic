@@ -60,6 +60,7 @@ export async function rejectUser(req: Request, res: Response): Promise<void> {
     return
   }
 
+  await prisma.staff.deleteMany({ where: { userId: id } })
   await prisma.user.delete({ where: { id } })
 
   res.json({ message: 'User rejected and removed' })

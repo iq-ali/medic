@@ -15,7 +15,7 @@ export async function stats(_req: Request, res: Response): Promise<void> {
         status: 'SCHEDULED',
       },
     }),
-    prisma.staff.count(),
+    prisma.staff.count({ where: { NOT: [{ user: { role: 'ADMIN' } }] } }),
     prisma.medicalRecord.count(),
   ])
 

@@ -24,15 +24,17 @@ async function main() {
         firstName: adminFirstName,
         lastName: adminLastName,
         status: 'APPROVED',
-        staff: {
-          create: {
-            firstName: adminFirstName,
-            lastName: adminLastName,
-          },
-        },
       },
     })
     console.log(`Seeded admin: ${adminEmail}`)
+  }
+
+  // Remove any Staff records linked to ADMIN users (cleanup for bad seed data)
+  const deleted = await prisma.staff.deleteMany({
+    where: { user: { role: 'ADMIN' } },
+  })
+  if (deleted.count > 0) {
+    console.log(`Cleaned up ${deleted.count} admin-linked staff record(s)`)
   }
 
   // Upsert AdminSettings
