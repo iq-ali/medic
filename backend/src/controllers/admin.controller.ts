@@ -1,6 +1,23 @@
 import type { Request, Response } from 'express'
 import { prisma } from '../prisma.js'
 
+export async function getAllUsers(_req: Request, res: Response): Promise<void> {
+  const users = await prisma.user.findMany({
+    where: { role: { not: 'ADMIN' } },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      status: true,
+      createdAt: true,
+    },
+    orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+  })
+  res.json({ users })
+}
+
 export async function getPendingUsers(_req: Request, res: Response): Promise<void> {
   const users = await prisma.user.findMany({
     where: { status: 'PENDING' },

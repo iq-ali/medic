@@ -1,5 +1,5 @@
 import { api } from './api'
-import type { PendingUser, AdminSettings } from '../types/auth'
+import type { PendingUser, AdminSettings, AllUser } from '../types/auth'
 import type { Student } from '../types/student'
 import type { MedicalRecord } from '../types/medical'
 import type { Appointment } from '../types/appointment'
@@ -25,6 +25,8 @@ export interface PendingRecordsResponse {
 }
 
 export const adminService = {
+  getAllUsers: () => api.get<{ users: AllUser[] }>('/admin/users'),
+
   getPendingUsers: () => api.get<{ users: PendingUser[] }>('/admin/pending-users'),
 
   approveUser: (id: string) =>

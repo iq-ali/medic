@@ -96,6 +96,10 @@ export async function signup(req: Request, res: Response): Promise<void> {
     return
   }
 
+  let settings = await prisma.adminSettings.findFirst()
+  if (!settings) settings = await prisma.adminSettings.create({ data: {} })
+  const autoApproved = settings.autoApproval
+
   const hashed = await bcrypt.hash(password, 10)
   const staffRoles = ['DOCTOR', 'THERAPIST', 'TEACHER'] as const
   const needsStaff = (staffRoles as readonly string[]).includes(role)
@@ -107,7 +111,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
       role,
       firstName,
       lastName,
-      status: 'APPROVED',
+      status: autoApproved ? 'APPROVED' : 'PENDING',
       ...(needsStaff
         ? {
             staff: {
@@ -123,7 +127,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
     },
   })
 
-  res.status(201).json({ message: 'Account created' })
+  res.status(201).json({ message: autoApproved ? 'Account created' : 'Account pending approval', autoApproved })
 }
 
 export async function setupAccount(req: Request, res: Response): Promise<void> {

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  getAllUsers,
   getPendingUsers,
   approveUser,
   rejectUser,
@@ -16,6 +17,7 @@ const router = Router()
 
 router.use(authenticate, requireRole('ADMIN'))
 
+router.get('/users', getAllUsers)
 router.get('/pending-users', getPendingUsers)
 router.post('/users/:id/approve', approveUser)
 router.delete('/users/:id', rejectUser)

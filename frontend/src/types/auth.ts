@@ -36,6 +36,17 @@ export interface SignupRequest {
 
 export interface SignupResponse {
   message: string
+  autoApproved: boolean
+}
+
+export interface AllUser {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  role: Role
+  status: 'PENDING' | 'APPROVED'
+  createdAt: string
 }
 
 export interface ChangePasswordRequest {

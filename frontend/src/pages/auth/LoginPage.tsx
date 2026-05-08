@@ -9,8 +9,6 @@ import { Input } from '@/components/ui/input'
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth'
 
-// ─── Schemas ─────────────────────────────────────────────────────────────────
-
 const loginSchema = z.object({
   email: z.string().trim().email('Enter a valid email address').max(254, 'Email is too long'),
   password: z.string().min(1, 'Password is required').max(72, 'Password is too long'),
@@ -24,11 +22,7 @@ const twoFASchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>
 type TwoFAFormData = z.infer<typeof twoFASchema>
 
-// ─── Terms text ──────────────────────────────────────────────────────────────
-
 const TERMS = `EduPal is a disability support platform for education professionals. By signing in you agree to handle all student and staff data in accordance with applicable privacy regulations, including FERPA and HIPAA where relevant. You agree not to share credentials, access data outside your authorized scope, or use the platform for purposes other than supporting students under your care. EduPal reserves the right to revoke access for violations of these terms.`
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -36,8 +30,8 @@ export function LoginPage() {
 
   const [serverError, setServerError] = useState<string | null>(null)
   const [termsOpen, setTermsOpen] = useState(false)
+  const [pendingApproval, setPendingApproval] = useState(false)
 
-  // 2FA step
   const [twoFAToken, setTwoFAToken] = useState<string | null>(null)
   const [twoFAError, setTwoFAError] = useState<string | null>(null)
 
@@ -58,6 +52,7 @@ export function LoginPage() {
 
   async function onSubmit(data: LoginFormData) {
     setServerError(null)
+    setPendingApproval(false)
     try {
       const result = await authService.login({ email: data.email, password: data.password })
 
@@ -70,7 +65,12 @@ export function LoginPage() {
       setAuth(user, token)
       navigate('/dashboard')
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'Login failed')
+      const msg = err instanceof Error ? err.message : 'Login failed'
+      if (msg.toLowerCase().includes('pending') || msg.toLowerCase().includes('awaiting')) {
+        setPendingApproval(true)
+      } else {
+        setServerError(msg)
+      }
     }
   }
 
@@ -106,9 +106,7 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit2FA(onSubmit2FA)} className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="code" className="text-sm font-medium">
-                Authentication code
-              </label>
+              <label htmlFor="code" className="text-sm font-medium">Authentication code</label>
               <Input
                 id="code"
                 type="text"
@@ -118,14 +116,10 @@ export function LoginPage() {
                 aria-invalid={!!errors2FA.code}
                 {...register2FA('code')}
               />
-              {errors2FA.code && (
-                <p className="text-xs text-destructive">{errors2FA.code.message}</p>
-              )}
+              {errors2FA.code && <p className="text-xs text-destructive">{errors2FA.code.message}</p>}
             </div>
 
-            {twoFAError && (
-              <p className="text-sm text-destructive text-center">{twoFAError}</p>
-            )}
+            {twoFAError && <p className="text-sm text-destructive text-center">{twoFAError}</p>}
 
             <Button type="submit" className="w-full" size="lg" disabled={isSubmitting2FA}>
               {isSubmitting2FA ? 'Verifying…' : 'Verify'}
@@ -159,94 +153,94 @@ export function LoginPage() {
           <p className="text-sm text-muted-foreground font-medium">Learn. Support. Thrive.</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              inputMode="email"
-              aria-invalid={!!errors.email}
-              {...register('email')}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              aria-invalid={!!errors.password}
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
-            )}
-          </div>
-
-          {/* Terms of Service */}
-          <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+        {pendingApproval ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-5 space-y-3 text-center"
+          >
+            <p className="text-2xl">⏳</p>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                Account awaiting approval
+              </p>
+              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                Your account has been submitted and is pending administrator approval.
+                You will be able to sign in once your account is approved.
+              </p>
+            </div>
             <button
               type="button"
-              className="flex items-center justify-between w-full text-sm font-medium text-left"
-              onClick={() => setTermsOpen((o) => !o)}
-              aria-expanded={termsOpen}
+              className="text-xs text-amber-700 dark:text-amber-400 underline underline-offset-2"
+              onClick={() => setPendingApproval(false)}
             >
-              Terms of Service
-              <span className="text-muted-foreground text-xs">{termsOpen ? '▲ hide' : '▼ read'}</span>
+              Use a different account
             </button>
-
-            {termsOpen && (
-              <p className="text-xs text-muted-foreground leading-relaxed border-t border-border pt-2">
-                {TERMS}
-              </p>
-            )}
-
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="mt-0.5 accent-primary"
-                {...register('agreed')}
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="text-sm font-medium">Email</label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                inputMode="email"
+                aria-invalid={!!errors.email}
+                {...register('email')}
               />
-              <span className="text-xs text-muted-foreground">
-                I agree to the Terms of Service
-              </span>
-            </label>
-            {errors.agreed && (
-              <p className="text-xs text-destructive">{errors.agreed.message}</p>
-            )}
-          </div>
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            </div>
 
-          {serverError && (
-            <p className="text-sm text-destructive text-center">{serverError}</p>
-          )}
+            <div className="space-y-1.5">
+              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                autoComplete="current-password"
+                aria-invalid={!!errors.password}
+                {...register('password')}
+              />
+              {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+            </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            size="lg"
-            disabled={isSubmitting || !agreed}
-          >
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </Button>
-        </form>
+            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+              <button
+                type="button"
+                className="flex items-center justify-between w-full text-sm font-medium text-left"
+                onClick={() => setTermsOpen((o) => !o)}
+                aria-expanded={termsOpen}
+              >
+                Terms of Service
+                <span className="text-muted-foreground text-xs">{termsOpen ? '▲ hide' : '▼ read'}</span>
+              </button>
+
+              {termsOpen && (
+                <p className="text-xs text-muted-foreground leading-relaxed border-t border-border pt-2">
+                  {TERMS}
+                </p>
+              )}
+
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" className="mt-0.5 accent-primary" {...register('agreed')} />
+                <span className="text-xs text-muted-foreground">I agree to the Terms of Service</span>
+              </label>
+              {errors.agreed && <p className="text-xs text-destructive">{errors.agreed.message}</p>}
+            </div>
+
+            {serverError && <p className="text-sm text-destructive text-center">{serverError}</p>}
+
+            <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || !agreed}>
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+        )}
 
         <p className="text-center text-sm text-muted-foreground">
           New to EduPal?{' '}
-          <Link to="/signup" className="font-medium text-foreground hover:underline">
-            Sign up
-          </Link>
+          <Link to="/signup" className="font-medium text-foreground hover:underline">Sign up</Link>
         </p>
       </motion.div>
     </div>

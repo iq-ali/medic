@@ -35,10 +35,7 @@ const schema = z
       .max(20, 'Too long')
       .refine((val) => !val || PHONE_RE.test(val), 'Digits, spaces, +, -, ( ) only')
       .optional(),
-    password: z
-      .string()
-      .min(8, 'Must be at least 8 characters')
-      .max(72, 'Too long'),
+    password: z.string().min(8, 'Must be at least 8 characters').max(72, 'Too long'),
     confirmPassword: z.string().min(1, 'Required'),
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -51,6 +48,7 @@ type FormData = z.infer<typeof schema>
 export function SignupPage() {
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
+  const [pendingApproval, setPendingApproval] = useState(false)
 
   const {
     register,
@@ -61,7 +59,7 @@ export function SignupPage() {
   async function onSubmit(data: FormData) {
     setServerError(null)
     try {
-      await authService.signup({
+      const result = await authService.signup({
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role,
@@ -69,10 +67,41 @@ export function SignupPage() {
         phone: data.phone || undefined,
         password: data.password,
       })
-      navigate('/login')
+      if (result.autoApproved) {
+        navigate('/login')
+      } else {
+        setPendingApproval(true)
+      }
     } catch (err) {
       setServerError(err instanceof Error ? err.message : 'Signup failed')
     }
+  }
+
+  if (pendingApproval) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-sm space-y-6 px-4 text-center"
+        >
+          <div className="size-14 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mx-auto">
+            <span className="text-2xl">⏳</span>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold">Awaiting approval</h1>
+            <p className="text-sm text-muted-foreground">
+              Your account has been submitted and is pending administrator approval.
+              You will be able to sign in once your account is approved.
+            </p>
+          </div>
+          <Link to="/login" className="inline-block text-sm font-medium text-foreground hover:underline">
+            Back to sign in
+          </Link>
+        </motion.div>
+      </div>
+    )
   }
 
   return (
@@ -92,24 +121,12 @@ export function SignupPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label htmlFor="firstName" className="text-sm font-medium">First name</label>
-              <Input
-                id="firstName"
-                placeholder="Jane"
-                autoComplete="given-name"
-                aria-invalid={!!errors.firstName}
-                {...register('firstName')}
-              />
+              <Input id="firstName" placeholder="Jane" autoComplete="given-name" aria-invalid={!!errors.firstName} {...register('firstName')} />
               {errors.firstName && <p className="text-xs text-destructive">{errors.firstName.message}</p>}
             </div>
             <div className="space-y-1.5">
               <label htmlFor="lastName" className="text-sm font-medium">Last name</label>
-              <Input
-                id="lastName"
-                placeholder="Smith"
-                autoComplete="family-name"
-                aria-invalid={!!errors.lastName}
-                {...register('lastName')}
-              />
+              <Input id="lastName" placeholder="Smith" autoComplete="family-name" aria-invalid={!!errors.lastName} {...register('lastName')} />
               {errors.lastName && <p className="text-xs text-destructive">{errors.lastName.message}</p>}
             </div>
           </div>
@@ -131,15 +148,7 @@ export function SignupPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium">Email</label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              inputMode="email"
-              aria-invalid={!!errors.email}
-              {...register('email')}
-            />
+            <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" inputMode="email" aria-invalid={!!errors.email} {...register('email')} />
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
 
@@ -147,41 +156,19 @@ export function SignupPage() {
             <label htmlFor="phone" className="text-sm font-medium">
               Phone <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+1 555 000 0000"
-              autoComplete="tel"
-              inputMode="tel"
-              aria-invalid={!!errors.phone}
-              {...register('phone')}
-            />
+            <Input id="phone" type="tel" placeholder="+1 555 000 0000" autoComplete="tel" inputMode="tel" aria-invalid={!!errors.phone} {...register('phone')} />
             {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium">Password</label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="new-password"
-              aria-invalid={!!errors.password}
-              {...register('password')}
-            />
+            <Input id="password" type="password" placeholder="••••••••" autoComplete="new-password" aria-invalid={!!errors.password} {...register('password')} />
             {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm password</label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="new-password"
-              aria-invalid={!!errors.confirmPassword}
-              {...register('confirmPassword')}
-            />
+            <Input id="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
             {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
           </div>
 
