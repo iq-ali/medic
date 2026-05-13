@@ -23,6 +23,7 @@ import { AppointmentFormPage } from './pages/appointments/AppointmentFormPage'
 import { ProfilePage } from './pages/profile/ProfilePage'
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage'
 import { PendingRecordsPage } from './pages/admin/PendingRecordsPage'
+import { LandingPage } from './pages/landing/LandingPage'
 import { useAuthStore } from './store/auth'
 import { authService } from './services/auth.service'
 
@@ -73,6 +74,7 @@ function App() {
     <HashRouter>
       <Routes>
         {/* Public */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/setup-account" element={<SetupAccountPage />} />
