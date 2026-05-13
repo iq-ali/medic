@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { ShieldCheck, ShieldOff, KeyRound, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth'
 import { sectionContainerVariants, sectionVariants } from '@/lib/animations'
@@ -249,8 +250,7 @@ export function ProfilePage() {
           <form onSubmit={pwForm.handleSubmit(onChangePassword)} className="space-y-3">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Current password</label>
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="••••••••"
                 aria-invalid={!!pwForm.formState.errors.currentPassword}
                 {...pwForm.register('currentPassword')}
@@ -264,8 +264,7 @@ export function ProfilePage() {
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium">New password</label>
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="••••••••"
                 aria-invalid={!!pwForm.formState.errors.newPassword}
                 {...pwForm.register('newPassword')}
@@ -279,8 +278,7 @@ export function ProfilePage() {
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Confirm new password</label>
-              <Input
-                type="password"
+              <PasswordInput
                 placeholder="••••••••"
                 aria-invalid={!!pwForm.formState.errors.confirmPassword}
                 {...pwForm.register('confirmPassword')}

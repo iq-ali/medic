@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { authService } from '@/services/auth.service'
 import { useState } from 'react'
 
@@ -162,13 +163,13 @@ export function SignupPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium">Password</label>
-            <Input id="password" type="password" placeholder="••••••••" autoComplete="new-password" aria-invalid={!!errors.password} {...register('password')} />
+            <PasswordInput id="password" placeholder="••••••••" autoComplete="new-password" aria-invalid={!!errors.password} {...register('password')} />
             {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm password</label>
-            <Input id="confirmPassword" type="password" placeholder="••••••••" autoComplete="new-password" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
+            <PasswordInput id="confirmPassword" placeholder="••••••••" autoComplete="new-password" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
             {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
           </div>
 

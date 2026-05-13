@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/store/auth'
 
@@ -195,9 +196,8 @@ export function LoginPage() {
 
             <div className="space-y-1.5">
               <label htmlFor="password" className="text-sm font-medium">Password</label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="••••••••"
                 autoComplete="current-password"
                 aria-invalid={!!errors.password}

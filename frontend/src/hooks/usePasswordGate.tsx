@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { authService } from '@/services/auth.service'
 
 export function usePasswordGate() {
@@ -57,8 +57,7 @@ export function usePasswordGate() {
         </div>
         <div className="space-y-1.5">
           <label className="text-sm font-medium">Password</label>
-          <Input
-            type="password"
+          <PasswordInput
             placeholder="••••••••"
             value={password}
             autoFocus

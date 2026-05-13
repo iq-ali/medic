@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { authService } from '@/services/auth.service'
 
 const schema = z
@@ -59,19 +59,19 @@ export function ChangePasswordPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="currentPassword" className="text-sm font-medium">Current password</label>
-            <Input id="currentPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.currentPassword} {...register('currentPassword')} />
+            <PasswordInput id="currentPassword" placeholder="••••••••" aria-invalid={!!errors.currentPassword} {...register('currentPassword')} />
             {errors.currentPassword && <p className="text-xs text-destructive">{errors.currentPassword.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="newPassword" className="text-sm font-medium">New password</label>
-            <Input id="newPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.newPassword} {...register('newPassword')} />
+            <PasswordInput id="newPassword" placeholder="••••••••" aria-invalid={!!errors.newPassword} {...register('newPassword')} />
             {errors.newPassword && <p className="text-xs text-destructive">{errors.newPassword.message}</p>}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm new password</label>
-            <Input id="confirmPassword" type="password" placeholder="••••••••" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
+            <PasswordInput id="confirmPassword" placeholder="••••••••" aria-invalid={!!errors.confirmPassword} {...register('confirmPassword')} />
             {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
           </div>
 
